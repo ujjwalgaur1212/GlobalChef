@@ -1,0 +1,19 @@
+src/screens/core/FamilyDashboardScreen.tsx:          value={Boolean(familyAlertsEnabled)}
+src/screens/core/ProfileSettingsScreen.tsx:          value={Boolean(voiceRemindersEnabled)}
+src/screens/core/ProfileSettingsScreen.tsx:          value={Boolean(familyAlertsEnabled)}
+src/screens/core/AddMedicationScreen.tsx:        <TextField label="Medicine name" onChangeText={setName} placeholder="Amlodipine" value={name} />
+src/screens/core/AddMedicationScreen.tsx:        <TextField label="Dosage" onChangeText={setDosage} placeholder="5 mg" value={dosage} />
+src/screens/core/AddMedicationScreen.tsx:        <TextField label="Notes" onChangeText={setInstructions} placeholder="After breakfast" value={instructions} />
+src/screens/core/AddMedicationScreen.tsx:            trackColor={{ false: "#D5DED9", true: "#67C391" }}
+src/screens/core/AddMedicationScreen.tsx:            value={Boolean(voiceReminderEnabled)}
+src/screens/core/AddMedicationScreen.tsx:            trackColor={{ false: "#D5DED9", true: "#67C391" }}
+src/screens/core/AddMedicationScreen.tsx:            value={Boolean(caregiverAlertsEnabled)}
+src/screens/core/AddMedicationScreen.tsx:            <TextField keyboardType="number-pad" label="Pills left" onChangeText={setPillsRemaining} value={pillsRemaining} />
+src/screens/core/AddMedicationScreen.tsx:            <TextField keyboardType="number-pad" label="Remind at" onChangeText={setRefillAt} value={refillAt} />
+src/screens/auth/SignUpScreen.tsx:        <TextField label="Full name" onChangeText={setName} value={name} />
+src/screens/auth/SignUpScreen.tsx:        <TextField autoCapitalize="none" keyboardType="email-address" label="Email" onChangeText={setEmail} value={email} />
+src/screens/auth/SignUpScreen.tsx:        <TextField label="Password" onChangeText={setPassword} secureTextEntry value={password} />
+src/screens/auth/LoginScreen.tsx:          value={email}
+src/screens/auth/LoginScreen.tsx:          value={password}
+src/components/ToggleRow.tsx:        trackColor={{ false: "#D5DED9", true: "#67C391" }}
+src/components/ToggleRow.tsx:        value={switchValue}

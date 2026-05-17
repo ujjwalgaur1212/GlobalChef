@@ -1,0 +1,220 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function owns(resourceData) {
+      return signedIn() && resourceData.createdBy == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && userId == request.auth.uid;
+      allow update: if (signedIn() && userId == request.auth.uid)
+        || (
+          signedIn()
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['followersCount'])
+          && (
+            (
+              resource.data.keys().hasAny(['followersCount'])
+              && (
+                request.resource.data.followersCount == resource.data.followersCount + 1
+                || request.resource.data.followersCount == resource.data.followersCount - 1
+              )
+            )
+            || (
+              !resource.data.keys().hasAny(['followersCount'])
+              && request.resource.data.followersCount == 1
+            )
+          )
+        )
+        || (
+          signedIn()
+          && userId == request.auth.uid
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['followingCount'])
+          && (
+            (
+              resource.data.keys().hasAny(['followingCount'])
+              && (
+                request.resource.data.followingCount == resource.data.followingCount + 1
+                || request.resource.data.followingCount == resource.data.followingCount - 1
+              )
+            )
+            || (
+              !resource.data.keys().hasAny(['followingCount'])
+              && request.resource.data.followingCount == 1
+            )
+          )
+        );
+      allow delete: if false;
+    }
+
+    match /recipes/{recipeId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.recipeId == recipeId
+        && request.resource.data.title is string
+        && request.resource.data.description is string
+        && request.resource.data.country is string
+        && request.resource.data.cuisine is string
+        && request.resource.data.cookTime is string
+        && request.resource.data.difficulty is string
+        && request.resource.data.calories is number
+        && request.resource.data.nutrition is map
+        && request.resource.data.ingredients is list
+        && request.resource.data.steps is list
+        && request.resource.data.tags is list
+        && request.resource.data.imageUrl is string
+        && request.resource.data.authorName is string
+        && request.resource.data.likes is number
+        && request.resource.data.likesCount is number
+        && request.resource.data.savesCount is number
+        && request.resource.data.commentsCount is number;
+      allow update: if owns(resource.data)
+        || (
+          signedIn()
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['likes', 'likesCount'])
+          && request.resource.data.likes == resource.data.likes + 1
+          && (
+            (
+              resource.data.keys().hasAny(['likesCount'])
+              && request.resource.data.likesCount == resource.data.likesCount + 1
+            )
+            || (
+              !resource.data.keys().hasAny(['likesCount'])
+              && request.resource.data.likesCount == 1
+            )
+          )
+        )
+        || (
+          signedIn()
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['savesCount'])
+          && (
+            (
+              resource.data.keys().hasAny(['savesCount'])
+              && (
+                request.resource.data.savesCount == resource.data.savesCount + 1
+                || request.resource.data.savesCount == resource.data.savesCount - 1
+              )
+            )
+            || (
+              !resource.data.keys().hasAny(['savesCount'])
+              && request.resource.data.savesCount == 1
+            )
+          )
+        )
+        || (
+          signedIn()
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['commentsCount'])
+          && (
+            (
+              resource.data.keys().hasAny(['commentsCount'])
+              && (
+                request.resource.data.commentsCount == resource.data.commentsCount + 1
+                || request.resource.data.commentsCount == resource.data.commentsCount - 1
+              )
+            )
+            || (
+              !resource.data.keys().hasAny(['commentsCount'])
+              && request.resource.data.commentsCount == 1
+            )
+          )
+        );
+      allow delete: if owns(resource.data);
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if signedIn()
+          && request.resource.data.commentId == commentId
+          && request.resource.data.recipeId == recipeId
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.userName is string
+          && request.resource.data.text is string
+          && request.resource.data.likesCount == 0
+          && request.resource.data.keys().hasOnly(['commentId', 'recipeId', 'userId', 'userName', 'userAvatar', 'text', 'createdAt', 'likesCount']);
+        allow update: if signedIn()
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(['likesCount'])
+          && request.resource.data.likesCount == resource.data.likesCount + 1;
+        allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+
+        match /likes/{userId} {
+          allow read: if signedIn();
+          allow create: if signedIn()
+            && userId == request.auth.uid
+            && request.resource.data.userId == request.auth.uid
+            && request.resource.data.commentId == commentId
+            && request.resource.data.recipeId == recipeId
+            && request.resource.data.keys().hasOnly(['commentId', 'recipeId', 'userId', 'createdAt']);
+          allow update, delete: if false;
+        }
+      }
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.recipeId is string
+        && request.resource.data.body is string;
+      allow update, delete: if owns(resource.data);
+    }
+
+    match /recipeLikes/{likeId} {
+      allow get: if signedIn() && likeId.matches(request.auth.uid + '_.*');
+      allow list: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.recipeId is string
+        && likeId == request.auth.uid + '_' + request.resource.data.recipeId
+        && request.resource.data.keys().hasOnly(['recipeId', 'userId', 'createdAt']);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    match /savedRecipes/{saveId} {
+      allow get: if signedIn() && saveId.matches(request.auth.uid + '_.*');
+      allow list: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.recipeId is string
+        && saveId == request.auth.uid + '_' + request.resource.data.recipeId
+        && request.resource.data.keys().hasOnly(['recipeId', 'userId', 'createdAt', 'recipe']);
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /following/{followId} {
+      allow get: if signedIn()
+        && followId.matches(request.auth.uid + '_.*');
+      allow create: if signedIn()
+        && request.resource.data.followerId == request.auth.uid
+        && request.resource.data.followedId is string
+        && request.resource.data.followedId != request.auth.uid
+        && followId == request.auth.uid + '_' + request.resource.data.followedId
+        && request.resource.data.keys().hasOnly(['followerId', 'followedId', 'createdAt']);
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.followerId == request.auth.uid;
+    }
+
+    match /followers/{followId} {
+      allow get: if signedIn()
+        && (
+          followId.matches('.*_' + request.auth.uid)
+          || followId.matches(request.auth.uid + '_.*')
+        );
+      allow create: if signedIn()
+        && request.resource.data.followerId == request.auth.uid
+        && request.resource.data.followedId is string
+        && request.resource.data.followedId != request.auth.uid
+        && followId == request.resource.data.followedId + '_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['followerId', 'followedId', 'createdAt']);
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.followerId == request.auth.uid;
+    }
+  }
+}

@@ -1,0 +1,47 @@
+src/navigation/AppTabs.tsx:        headerShown: false,
+src/navigation/RootNavigator.tsx:    <Stack.Navigator screenOptions={{ headerShown: false }}>
+src/navigation/AuthNavigator.tsx:    <Stack.Navigator screenOptions={{ headerShown: false }}>
+src/utils/cn.ts:export function cn(...classes: Array<string | false | null | undefined>) {
+src/screens/core/ReminderScreen.tsx:    <Screen scroll={false}>
+src/screens/core/AddMedicationScreen.tsx:  const [voiceReminderEnabled, setVoiceReminderEnabled] = useState(existing?.voiceReminderEnabled ?? true);
+src/screens/core/AddMedicationScreen.tsx:  const [caregiverAlertsEnabled, setCaregiverAlertsEnabled] = useState(existing?.caregiverAlertsEnabled ?? true);
+src/screens/core/AddMedicationScreen.tsx:      isActive: true
+src/screens/core/AddMedicationScreen.tsx:            trackColor={{ false: "#D5DED9", true: "#67C391" }}
+src/screens/core/AddMedicationScreen.tsx:            trackColor={{ false: "#D5DED9", true: "#67C391" }}
+src/screens/onboarding/OnboardingScreen.tsx:    setHasCompletedOnboarding(true);
+src/screens/onboarding/OnboardingScreen.tsx:    <Screen scroll={false}>
+src/components/Card.tsx:    return value.toLowerCase() === "true";
+src/components/Card.tsx:  padded = true,
+src/components/Card.tsx:  const shouldPad = normalizedPadded === true || normalizedPadded === "true";
+src/components/TextField.tsx:    return value.toLowerCase() === "true";
+src/components/ToggleRow.tsx:        trackColor={{ false: "#D5DED9", true: "#67C391" }}
+src/components/Screen.tsx:export function Screen({ children, scroll = true, className, contentClassName }: ScreenProps) {
+src/components/Screen.tsx:  const shouldScroll = normalizedScroll === true || normalizedScroll === "true";
+src/components/Screen.tsx:      showsVerticalScrollIndicator={false}
+src/components/IconButton.tsx:    return value.toLowerCase() === "true";
+src/components/AppButton.tsx:    return value.toLowerCase() === "true";
+src/services/medicationRepository.ts:  await setDoc(reference, payload, { merge: true });
+src/services/notificationService.ts:    shouldPlaySound: true,
+src/services/notificationService.ts:    shouldSetBadge: true,
+src/services/notificationService.ts:    shouldShowBanner: true,
+src/services/notificationService.ts:    shouldShowList: true
+src/store/useMedicationStore.ts:    voiceReminderEnabled: true,
+src/store/useMedicationStore.ts:    caregiverAlertsEnabled: true,
+src/store/useMedicationStore.ts:    isActive: true,
+src/store/useMedicationStore.ts:    voiceReminderEnabled: true,
+src/store/useMedicationStore.ts:    caregiverAlertsEnabled: true,
+src/store/useMedicationStore.ts:    isActive: true,
+src/store/useMedicationStore.ts:    voiceReminderEnabled: false,
+src/store/useMedicationStore.ts:    caregiverAlertsEnabled: false,
+src/store/useMedicationStore.ts:    isActive: true,
+src/store/useAuthStore.ts:      isLoading: true,
+src/store/useAuthStore.ts:      hasCompletedOnboarding: false,
+src/store/useAuthStore.ts:        set({ isLoading: true });
+src/store/useAuthStore.ts:        return subscribeToAuthState((user) => set({ user, isLoading: false }));
+src/store/useAuthStore.ts:        set({ isLoading: true });
+src/store/useAuthStore.ts:        set({ user, isLoading: false, hasCompletedOnboarding: true });
+src/store/useAuthStore.ts:        set({ isLoading: true });
+src/store/useAuthStore.ts:        set({ user, isLoading: false, hasCompletedOnboarding: true });
+src/store/useAuthStore.ts:        set({ user: null, isLoading: false });
+src/store/useSettingsStore.ts:      voiceRemindersEnabled: true,
+src/store/useSettingsStore.ts:      familyAlertsEnabled: true,

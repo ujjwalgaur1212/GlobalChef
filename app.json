@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "GlobalChef",
+    "slug": "globalchef",
+    "scheme": "globalchef",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0E1111",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.globalchef.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "GlobalChef needs photo library access so you can choose recipe images to upload.",
+        "NSCameraUsageDescription": "GlobalChef needs camera access so you can take recipe photos.",
+        "NSPhotoLibraryAddUsageDescription": "GlobalChef needs permission to save edited recipe photos to your library."
+      }
+    },
+    "android": {
+      "package": "com.globalchef.app"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "GlobalChef needs photo library access so you can choose recipe images to upload.",
+          "cameraPermission": "GlobalChef needs camera access so you can take recipe photos."
+        }
+      ]
+    ],
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "replace-with-eas-project-id"
+      }
+    }
+  }
+}
