@@ -1,7 +1,7 @@
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { Gauge, ImagePlus, MapPin, Tag, Timer, Utensils } from "lucide-react-native";
+import { ImagePlus, MapPin, Utensils } from "lucide-react-native";
 import { useState } from "react";
 import { ActivityIndicator, ImageBackground, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,16 +13,12 @@ import { colors } from "@/constants/theme";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { createRecipe, getRecipeErrorMessage } from "@/services/recipeService";
-import type { RecipeDifficulty } from "@/types/recipe";
 
 type UploadField =
   | "title"
   | "description"
   | "country"
   | "cuisine"
-  | "cookTime"
-  | "difficulty"
-  | "calories"
   | "ingredients"
   | "steps"
   | "tags"
@@ -32,7 +28,6 @@ type UploadErrors = Partial<Record<UploadField, string>>;
 const initialIngredients = [""];
 const initialSteps = [""];
 const initialTags = [""];
-const difficultyOptions: RecipeDifficulty[] = ["Easy", "Medium", "Hard"];
 
 export default function UploadTab() {
   const router = useRouter();
@@ -42,9 +37,6 @@ export default function UploadTab() {
   const [description, setDescription] = useState("");
   const [country, setCountry] = useState("");
   const [cuisine, setCuisine] = useState("");
-  const [cookTime, setCookTime] = useState("");
-  const [difficulty, setDifficulty] = useState<RecipeDifficulty>("Easy");
-  const [calories, setCalories] = useState("");
   const [ingredients, setIngredients] = useState(initialIngredients);
   const [steps, setSteps] = useState(initialSteps);
   const [tags, setTags] = useState(initialTags);
@@ -121,7 +113,6 @@ export default function UploadTab() {
     const cleanedIngredients = ingredients.map((item) => item.trim()).filter(Boolean);
     const cleanedSteps = steps.map((item) => item.trim()).filter(Boolean);
     const cleanedTags = tags.map((item) => item.trim().replace(/^#/, "")).filter(Boolean);
-    const caloriesNumber = Number(calories);
     const nextErrors: UploadErrors = {};
 
     if (!title.trim()) {
@@ -138,18 +129,6 @@ export default function UploadTab() {
 
     if (!cuisine.trim()) {
       nextErrors.cuisine = "Cuisine type is required.";
-    }
-
-    if (!cookTime.trim()) {
-      nextErrors.cookTime = "Cooking time is required.";
-    }
-
-    if (!difficulty) {
-      nextErrors.difficulty = "Choose a difficulty.";
-    }
-
-    if (!calories.trim() || Number.isNaN(caloriesNumber) || caloriesNumber <= 0) {
-      nextErrors.calories = "Enter calories as a positive number.";
     }
 
     if (cleanedIngredients.length === 0) {
@@ -174,8 +153,7 @@ export default function UploadTab() {
       isValid: Object.keys(nextErrors).length === 0,
       cleanedIngredients,
       cleanedSteps,
-      cleanedTags,
-      caloriesNumber
+      cleanedTags
     };
   }
 
@@ -184,9 +162,6 @@ export default function UploadTab() {
     setDescription("");
     setCountry("");
     setCuisine("");
-    setCookTime("");
-    setDifficulty("Easy");
-    setCalories("");
     setIngredients(initialIngredients);
     setSteps(initialSteps);
     setTags(initialTags);
@@ -219,9 +194,6 @@ export default function UploadTab() {
         description,
         country,
         cuisine,
-        cookTime,
-        difficulty,
-        calories: validation.caloriesNumber,
         ingredients: validation.cleanedIngredients,
         steps: validation.cleanedSteps,
         tags: validation.cleanedTags,
@@ -311,50 +283,7 @@ export default function UploadTab() {
                 placeholder="Japanese"
                 value={cuisine}
               />
-              <View className="gap-3">
-                <View className="flex-row items-center">
-                  <Gauge stroke={colors.textMuted} size={20} />
-                  <Text className="ml-2 text-chef-sm font-semibold text-chef-cream">Difficulty</Text>
-                </View>
-                <View className="flex-row gap-3">
-                  {difficultyOptions.map((option) => {
-                    const isSelected = option === difficulty;
 
-                    return (
-                      <Pressable
-                        className={`h-12 flex-1 items-center justify-center rounded-chef border ${
-                          isSelected ? "border-chef-saffron bg-chef-saffron" : "border-chef-line bg-chef-panel"
-                        }`}
-                        key={option}
-                        onPress={() => setDifficulty(option)}
-                      >
-                        <Text className={`text-chef-sm font-extrabold ${isSelected ? "text-chef-black" : "text-chef-cream"}`}>{String(option)}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-                {errors.difficulty ? <Text className="text-chef-xs font-medium text-chef-tomato">{errors.difficulty}</Text> : null}
-              </View>
-              <View className="flex-row gap-4">
-                <FormInput
-                  className="flex-1"
-                  error={errors.cookTime}
-                  label="Cooking time"
-                  leftIcon={<Timer stroke={colors.textMuted} size={20} />}
-                  onChangeText={setCookTime}
-                  placeholder="35 min"
-                  value={cookTime}
-                />
-                <FormInput
-                  className="flex-1"
-                  error={errors.calories}
-                  keyboardType="number-pad"
-                  label="Calories / nutrition"
-                  onChangeText={setCalories}
-                  placeholder="520"
-                  value={calories}
-                />
-              </View>
 
               <DynamicFieldList
                 error={errors.ingredients}

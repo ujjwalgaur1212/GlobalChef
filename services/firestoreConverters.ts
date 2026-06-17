@@ -1,6 +1,6 @@
 import type { Timestamp } from "firebase/firestore";
 
-import type { RecipeDifficulty } from "@/types/recipe";
+
 
 type TimestampLike = Timestamp | { toDate?: unknown };
 
@@ -56,6 +56,3 @@ export function toSafeDate(value: unknown) {
   return null;
 }
 
-export function toRecipeDifficulty(value: unknown): RecipeDifficulty {
-  return value === "Easy" || value === "Medium" || value === "Hard" ? value : "Easy";
-}

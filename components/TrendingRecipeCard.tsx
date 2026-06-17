@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Clock3, Heart, MessageCircle } from "lucide-react-native";
+import { Heart, MessageCircle } from "lucide-react-native";
 import { useRef } from "react";
 import { Animated, ImageBackground, Pressable, Text, View } from "react-native";
 
@@ -17,7 +17,6 @@ export function TrendingRecipeCard({ recipe, onPress }: TrendingRecipeCardProps)
   const country = String(recipe.country ?? "");
   const title = String(recipe.title ?? "");
   const likes = Number.isFinite(Number(recipe.likes)) ? Number(recipe.likes) : 0;
-  const cookTime = String(recipe.cookTime ?? "");
   const commentsCount = Number.isFinite(Number(recipe.commentsCount)) ? Number(recipe.commentsCount) : 0;
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -44,8 +43,6 @@ export function TrendingRecipeCard({ recipe, onPress }: TrendingRecipeCardProps)
             <View className="mt-2 flex-row items-center">
               <Heart stroke={colors.saffron} size={14} />
               <Text className="ml-1 mr-4 text-chef-xs font-bold text-chef-cream">{String(likes)}</Text>
-              <Clock3 stroke={colors.textMuted} size={14} />
-              <Text className="ml-1 mr-4 text-chef-xs font-bold text-chef-muted">{cookTime}</Text>
               <MessageCircle stroke={colors.textMuted} size={14} />
               <Text className="ml-1 text-chef-xs font-bold text-chef-muted">{String(commentsCount)}</Text>
             </View>

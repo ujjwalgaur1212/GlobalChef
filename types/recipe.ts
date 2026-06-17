@@ -1,9 +1,3 @@
-export type RecipeDifficulty = "Easy" | "Medium" | "Hard";
-
-export type RecipeNutrition = {
-  calories: number;
-};
-
 export type RecipeSearchSort = "newest" | "mostLiked" | "mostCommented";
 
 export type Recipe = {
@@ -13,10 +7,6 @@ export type Recipe = {
   description: string;
   country: string;
   cuisine: string;
-  calories: number;
-  nutrition: RecipeNutrition;
-  cookTime: string;
-  difficulty: RecipeDifficulty;
   ingredients: string[];
   steps: string[];
   tags: string[];
@@ -38,9 +28,6 @@ export type CreateRecipeInput = {
   description: string;
   country: string;
   cuisine: string;
-  cookTime: string;
-  difficulty: RecipeDifficulty;
-  calories: number;
   ingredients: string[];
   steps: string[];
   tags: string[];
@@ -53,9 +40,6 @@ export type UpdateRecipeInput = {
   description: string;
   country: string;
   cuisine: string;
-  cookTime: string;
-  difficulty: RecipeDifficulty;
-  calories: number;
   ingredients: string[];
   steps: string[];
   tags: string[];

@@ -20,7 +20,7 @@ import {
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 import { db, storage } from "@/firebase/config";
-import { toRecipeDifficulty, toSafeDate, toSafeNumber, toSafeString, toSafeStringArray } from "@/services/firestoreConverters";
+import { toSafeDate, toSafeNumber, toSafeString, toSafeStringArray } from "@/services/firestoreConverters";
 import type { CreateRecipeInput, UpdateRecipeInput, Recipe, RecipeSearchSort } from "@/types/recipe";
 
 type Unsubscribe = () => void;
@@ -47,10 +47,6 @@ const seedRecipes: SeedRecipe[] = [
     description: "A silky miso broth with springy noodles, mushrooms, and a soft egg finish.",
     country: "Japan",
     cuisine: "Japanese",
-    calories: 520,
-    nutrition: { calories: 520 },
-    cookTime: "35 min",
-    difficulty: "Medium",
     imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=1200&q=85",
     ingredients: ["ramen noodles", "miso paste", "soft boiled eggs", "scallions", "shiitake mushrooms"],
     steps: ["Simmer the miso broth.", "Cook noodles until springy.", "Top with eggs, scallions, and mushrooms."],
@@ -62,10 +58,6 @@ const seedRecipes: SeedRecipe[] = [
     description: "Charred chicken simmered in a glossy tomato butter sauce with warm spices.",
     country: "India",
     cuisine: "Indian",
-    calories: 740,
-    nutrition: { calories: 740 },
-    cookTime: "45 min",
-    difficulty: "Medium",
     imageUrl: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=1200&q=85",
     ingredients: ["chicken", "tomato puree", "cream", "butter", "garam masala"],
     steps: ["Marinate and sear the chicken.", "Build the tomato butter sauce.", "Simmer together until glossy."],
@@ -77,10 +69,6 @@ const seedRecipes: SeedRecipe[] = [
     description: "Quick corn tortillas loaded with chipotle mushrooms, avocado, lime, and cotija.",
     country: "Mexico",
     cuisine: "Mexican",
-    calories: 460,
-    nutrition: { calories: 460 },
-    cookTime: "30 min",
-    difficulty: "Easy",
     imageUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=1200&q=85",
     ingredients: ["corn tortillas", "chipotle mushrooms", "avocado", "lime", "cotija"],
     steps: ["Char the tortillas.", "Saute the mushrooms with chipotle.", "Assemble with avocado, lime, and cotija."],
@@ -132,12 +120,6 @@ export function mapRecipeData(documentId: string, data: DocumentData): Recipe {
     description: toSafeString(data.description),
     country: toSafeString(data.country),
     cuisine: toSafeString(data.cuisine),
-    cookTime: toSafeString(data.cookTime),
-    calories: toSafeNumber(data.calories),
-    nutrition: {
-      calories: toSafeNumber(data.nutrition?.calories ?? data.calories)
-    },
-    difficulty: toRecipeDifficulty(data.difficulty),
     ingredients: toSafeStringArray(data.ingredients),
     steps: toSafeStringArray(data.steps),
     tags: toSafeStringArray(data.tags),
@@ -319,7 +301,6 @@ export async function createRecipe(input: CreateRecipeInput) {
   const recipeRef = doc(recipesCollection());
   const authorId = toSafeString(input.authorId);
   const imageUrl = await uploadRecipeImage(toSafeString(input.imageUri), recipeRef.id, authorId);
-  const calories = toSafeNumber(input.calories);
   const batch = writeBatch(requireDb());
 
   batch.set(recipeRef, {
@@ -328,12 +309,6 @@ export async function createRecipe(input: CreateRecipeInput) {
     description: toSafeString(input.description).trim(),
     country: toSafeString(input.country).trim(),
     cuisine: toSafeString(input.cuisine).trim(),
-    cookTime: toSafeString(input.cookTime).trim(),
-    difficulty: toRecipeDifficulty(input.difficulty),
-    calories,
-    nutrition: {
-      calories
-    },
     ingredients: toSafeStringArray(input.ingredients),
     steps: toSafeStringArray(input.steps),
     tags: toSafeStringArray(input.tags),
@@ -366,26 +341,14 @@ export async function updateRecipe(
   recipeId: string,
   input: UpdateRecipeInput
 ) {
-  const calories = Number(input.calories) || 0;
-
   await updateDoc(doc(requireDb(), "recipes", recipeId), {
     title: toSafeString(input.title).trim(),
     description: toSafeString(input.description).trim(),
     country: toSafeString(input.country).trim(),
     cuisine: toSafeString(input.cuisine).trim(),
-    cookTime: toSafeString(input.cookTime).trim(),
-    difficulty: toRecipeDifficulty(input.difficulty),
-
-    calories,
-
-    nutrition: {
-      calories,
-    },
-
     ingredients: toSafeStringArray(input.ingredients),
     steps: toSafeStringArray(input.steps),
     tags: toSafeStringArray(input.tags),
-
     imageUrl: input.imageUri,
   });
 }

@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Bookmark, Clock3, Flame, Heart, MessageCircle, Utensils } from "lucide-react-native";
+import { Bookmark, Heart, MessageCircle, Utensils } from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import { ActivityIndicator, Animated, ImageBackground, Pressable, Text, View } from "react-native";
 
@@ -34,8 +34,7 @@ export function RecipeCard({
   const country = String(recipe.country ?? "");
   const cuisine = String(recipe.cuisine ?? "");
   const imageUrl = String(recipe.imageUrl ?? "");
-  const cookTime = String(recipe.cookTime ?? "");
-  const calories = Number.isFinite(Number(recipe.calories)) ? Number(recipe.calories) : 0;
+
   const commentsCount = Number.isFinite(Number(recipe.commentsCount)) ? Number(recipe.commentsCount) : 0;
   const likes = Number.isFinite(Number(recipe.likes)) ? Number(recipe.likes) : 0;
   const ingredientsCount = Array.isArray(recipe.ingredients) ? recipe.ingredients.length : 0;
@@ -122,14 +121,7 @@ export function RecipeCard({
           </ImageBackground>
 
           <View className="flex-row items-center justify-between px-4 py-4">
-            <View className="flex-row items-center">
-              <Clock3 stroke={colors.textMuted} size={17} />
-              <Text className="ml-2 text-chef-sm font-bold text-chef-cream">{cookTime}</Text>
-            </View>
-            <View className="flex-row items-center">
-              <Flame stroke={colors.tomato} size={17} />
-              <Text className="ml-2 text-chef-sm font-bold text-chef-cream">{String(calories)} cal</Text>
-            </View>
+
             <View className="flex-row items-center">
               <MessageCircle stroke={colors.textMuted} size={17} />
               <Text className="ml-2 text-chef-sm font-bold text-chef-cream">{String(commentsCount)}</Text>

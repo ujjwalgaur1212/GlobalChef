@@ -4,10 +4,7 @@ import {
   Bookmark,
   CalendarDays,
   Check,
-  Clock3,
-  Flame,
   FolderPlus,
-  Gauge,
   Globe2,
   Heart,
   MessageCircle,
@@ -862,12 +859,6 @@ export default function RecipeDetailScreen() {
             />
 
             <View className="flex-row gap-3">
-              <RecipeMetaCard icon={<Clock3 stroke={colors.saffron} size={20} />} label="Cook time" value={String(recipe.cookTime || "Not set")} />
-              <RecipeMetaCard icon={<Flame stroke={colors.tomato} size={20} />} label="Calories" value={`${Number(recipe.calories) || 0} cal`} />
-              <RecipeMetaCard icon={<CalendarDays stroke={colors.saffron} size={20} />} label="Published" value={createdDateLabel} />
-            </View>
-
-            <View className="mt-3 flex-row gap-3">
               <RecipeMetaCard icon={<Heart stroke={colors.saffron} size={20} />} label="Likes" value={`${Number(recipe.likesCount ?? recipe.likes) || 0}`} />
               <RecipeMetaCard icon={<MessageCircle stroke={colors.saffron} size={20} />} label="Comments" value={`${Number(recipe.commentsCount) || comments.length}`} />
               <RecipeMetaCard icon={<Bookmark stroke={colors.saffron} size={20} />} label="Saves" value={`${Number(recipe.savesCount) || 0}`} />
@@ -876,7 +867,7 @@ export default function RecipeDetailScreen() {
             <View className="mt-3 flex-row gap-3">
               <RecipeMetaCard icon={<Globe2 stroke={colors.saffron} size={20} />} label="Country" value={String(recipe.country || "Global")} />
               <RecipeMetaCard icon={<Utensils stroke={colors.saffron} size={20} />} label="Cuisine" value={String(recipe.cuisine || "Chef's choice")} />
-              <RecipeMetaCard icon={<Gauge stroke={colors.saffron} size={20} />} label="Difficulty" value={String(recipe.difficulty ?? "Easy")} />
+              <RecipeMetaCard icon={<CalendarDays stroke={colors.saffron} size={20} />} label="Published" value={createdDateLabel} />
             </View>
 
             <Pressable

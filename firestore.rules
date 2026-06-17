@@ -108,10 +108,6 @@ service cloud.firestore {
         && request.resource.data.description is string
         && request.resource.data.country is string
         && request.resource.data.cuisine is string
-        && request.resource.data.cookTime is string
-        && request.resource.data.difficulty is string
-        && request.resource.data.calories is number
-        && request.resource.data.nutrition is map
         && request.resource.data.ingredients is list
         && request.resource.data.steps is list
         && request.resource.data.tags is list
