@@ -6,7 +6,8 @@ import {
   removeSavedRecipe,
   saveRecipe,
   subscribeToUserRecipeLikes,
-  subscribeToUserSavedRecipes
+  subscribeToUserSavedRecipes,
+  unlikeRecipe
 } from "@/services/recipeInteractionService";
 import type { RecipeInteraction } from "@/types/recipeInteraction";
 
@@ -17,8 +18,6 @@ export function useRecipeInteractions(userId?: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log("[GlobalChef] Current user id for recipe interactions", { userId: userId ?? null });
-
     if (!userId) {
       setLikes([]);
       setSaves([]);
@@ -72,12 +71,6 @@ export function useRecipeInteractions(userId?: string) {
           return;
         }
 
-        console.log("[GlobalChef] Saved recipes subscription update", {
-          userId,
-          count: nextSaves.length,
-          recipeIds: nextSaves.map((save) => save.recipeId)
-        });
-
         setSaves(nextSaves);
         setError(null);
         markLoaded("saves");
@@ -111,6 +104,69 @@ export function useRecipeInteractions(userId?: string) {
       return likeRecipeOnce(recipeId, userId);
     },
     [userId]
+  );
+
+  const unlikeRecipeById = useCallback(
+    async (recipeId: string) => {
+      if (!userId) {
+        throw new Error("Sign in before updating liked recipes.");
+      }
+
+      return unlikeRecipe(recipeId, userId);
+    },
+    [userId]
+  );
+
+  const toggleLikedRecipeById = useCallback(
+    async (recipeId: string) => {
+      if (likedRecipeIds.has(recipeId)) {
+        const previousLikes = likes;
+
+        setLikes((currentLikes) => currentLikes.filter((like) => like.recipeId !== recipeId));
+
+        try {
+          await unlikeRecipeById(recipeId);
+        } catch (unlikeError) {
+          setLikes(previousLikes);
+          throw unlikeError;
+        }
+
+        return false;
+      }
+
+      const optimisticLike: RecipeInteraction | null = userId
+        ? {
+            id: `${userId}_${recipeId}`,
+            recipeId,
+            userId,
+            createdAt: new Date(),
+            recipe: null
+          }
+        : null;
+
+      if (optimisticLike) {
+        setLikes((currentLikes) => {
+          if (currentLikes.some((like) => like.recipeId === recipeId)) {
+            return currentLikes;
+          }
+
+          return [optimisticLike, ...currentLikes];
+        });
+      }
+
+      try {
+        await likeRecipeById(recipeId);
+      } catch (likeError) {
+        if (optimisticLike) {
+          setLikes((currentLikes) => currentLikes.filter((like) => like.recipeId !== recipeId));
+        }
+
+        throw likeError;
+      }
+
+      return true;
+    },
+    [likeRecipeById, likedRecipeIds, likes, unlikeRecipeById, userId]
   );
 
   const saveRecipeById = useCallback(
@@ -155,6 +211,8 @@ export function useRecipeInteractions(userId?: string) {
     isLoading,
     error,
     likeRecipeById,
+    unlikeRecipeById,
+    toggleLikedRecipeById,
     saveRecipeById,
     removeSavedRecipeById,
     toggleSavedRecipeById

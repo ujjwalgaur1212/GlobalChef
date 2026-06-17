@@ -1,12 +1,14 @@
 import { Redirect, Tabs } from "expo-router";
-import { ChefHat, House, PlusCircle, Search, UserRound, UsersRound } from "lucide-react-native";
+import { Bell, ChefHat, House, PlusCircle, Search, UserRound, UsersRound } from "lucide-react-native";
 
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { colors } from "@/constants/theme";
 import { useAuth } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export default function TabsLayout() {
   const { user, initializing } = useAuth();
+  const { unreadCount } = useNotifications(user?.id);
 
   if (initializing) {
     return <LoadingScreen />;
@@ -61,6 +63,20 @@ export default function TabsLayout() {
         options={{
           title: "Community",
           tabBarIcon: ({ color, size }) => <UsersRound stroke={color} size={size} strokeWidth={2.3} />
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "Alerts",
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: colors.tomato,
+            color: colors.cream,
+            fontSize: 11,
+            fontWeight: "800"
+          },
+          tabBarIcon: ({ color, size }) => <Bell stroke={color} size={size} strokeWidth={2.3} />
         }}
       />
       <Tabs.Screen

@@ -13,6 +13,8 @@ import {
 
 import { auth, db } from "@/firebase/config";
 import { toSafeDate, toSafeNumber, toSafeString } from "@/services/firestoreConverters";
+import { createNotificationInTransaction } from "@/services/notificationService";
+import { mapRecipeData } from "@/services/recipeService";
 import type { AuthUser } from "@/types/auth";
 import type { RecipeComment } from "@/types/comment";
 
@@ -125,7 +127,17 @@ export async function addRecipeComment(recipeId: string, text: string, user: Aut
   const nextCommentRef = doc(commentsCollection(recipeId));
   const nextRecipeRef = recipeRef(recipeId);
 
-  await runTransaction(requireDb(), async (transaction) => {
+  const firestore = requireDb();
+
+  await runTransaction(firestore, async (transaction) => {
+    const recipeSnapshot = await transaction.get(nextRecipeRef);
+
+    if (!recipeSnapshot.exists()) {
+      throw new Error("Recipe not found.");
+    }
+
+    const recipeData = mapRecipeData(recipeSnapshot.id, recipeSnapshot.data());
+
     transaction.set(nextCommentRef, {
       commentId: nextCommentRef.id,
       recipeId,
@@ -138,6 +150,17 @@ export async function addRecipeComment(recipeId: string, text: string, user: Aut
     });
     transaction.update(nextRecipeRef, {
       commentsCount: increment(1)
+    });
+    createNotificationInTransaction(transaction, firestore, {
+      recipientId: recipeData.authorId || recipeData.createdBy,
+      actorId: user.id,
+      actorName: user.displayName || "GlobalChef cook",
+      actorPhotoURL: user.photoURL ?? null,
+      type: "recipeComment",
+      recipeId,
+      recipeTitle: recipeData.title,
+      commentId: nextCommentRef.id,
+      commentText: trimmedText.slice(0, 160)
     });
   });
 

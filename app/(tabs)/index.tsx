@@ -1,7 +1,7 @@
 import { Bell, Sparkles } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, ScrollView, Text, View } from "react-native";
+import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CategoryChips } from "@/components/CategoryChips";
@@ -21,7 +21,7 @@ export default function HomeFeedTab() {
   const router = useRouter();
   const { user } = useAuth();
   const { recipes, isLoading, isRefreshing, error, refresh } = useRecipes(user?.id);
-  const { likedRecipeIds, savedRecipeIds, likeRecipeById, toggleSavedRecipeById } = useRecipeInteractions(user?.id);
+  const { likedRecipeIds, savedRecipeIds, toggleLikedRecipeById, toggleSavedRecipeById } = useRecipeInteractions(user?.id);
   const { showToast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -63,8 +63,8 @@ export default function HomeFeedTab() {
     setPendingLikeIds((current) => new Set(current).add(recipeId));
 
     try {
-      const didLike = await likeRecipeById(recipeId);
-      showToast(didLike ? "Recipe liked" : "You already liked this recipe", didLike ? "success" : "info");
+      const didLike = await toggleLikedRecipeById(recipeId);
+      showToast(didLike ? "Recipe liked" : "Recipe unliked", "success");
     } catch (likeError) {
       showToast(likeError instanceof Error ? likeError.message : "Could not like this recipe. Try again.", "error");
     } finally {
@@ -156,9 +156,12 @@ export default function HomeFeedTab() {
                       What are we cooking, {firstName}?
                     </Text>
                   </View>
-                  <View className="h-12 w-12 items-center justify-center rounded-chef border border-chef-line bg-chef-panel">
+                  <Pressable
+                    className="h-12 w-12 items-center justify-center rounded-chef border border-chef-line bg-chef-panel"
+                    onPress={() => router.push("/(tabs)/notifications")}
+                  >
                     <Bell stroke={colors.cream} size={21} strokeWidth={2.3} />
-                  </View>
+                  </Pressable>
                 </View>
               </View>
 

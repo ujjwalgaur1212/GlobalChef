@@ -10,6 +10,52 @@ service cloud.firestore {
       return signedIn() && resourceData.createdBy == request.auth.uid;
     }
 
+    function recipeLikeCounterChangedByOne(counterName) {
+      return !request.resource.data.diff(resource.data).changedKeys().hasAny([counterName])
+        || (
+          request.resource.data[counterName] is number
+          && request.resource.data[counterName] >= 0
+          && (
+            request.resource.data[counterName] == resource.data[counterName] + 1
+            || request.resource.data[counterName] == resource.data[counterName] - 1
+          )
+        );
+    }
+
+    function validRecipeRatingAggregate() {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly(['averageRating', 'ratingsCount'])
+        && request.resource.data.averageRating is number
+        && request.resource.data.averageRating >= 0
+        && request.resource.data.averageRating <= 5
+        && request.resource.data.ratingsCount is number
+        && request.resource.data.ratingsCount >= 0
+        && (
+          (
+            resource.data.keys().hasAny(['ratingsCount'])
+            && (
+              request.resource.data.ratingsCount == resource.data.ratingsCount
+              || request.resource.data.ratingsCount == resource.data.ratingsCount + 1
+              || request.resource.data.ratingsCount == resource.data.ratingsCount - 1
+            )
+          )
+          || (
+            !resource.data.keys().hasAny(['ratingsCount'])
+            && (
+              request.resource.data.ratingsCount == 0
+              || request.resource.data.ratingsCount == 1
+            )
+          )
+        )
+        && (
+          request.resource.data.ratingsCount > 0
+          || request.resource.data.averageRating == 0
+        );
+    }
+
+    function validRatingValue(rating) {
+      return rating is int && rating >= 1 && rating <= 5;
+    }
+
     match /users/{userId} {
       allow read: if signedIn();
       allow create: if signedIn() && userId == request.auth.uid;
@@ -74,22 +120,18 @@ service cloud.firestore {
         && request.resource.data.likes is number
         && request.resource.data.likesCount is number
         && request.resource.data.savesCount is number
-        && request.resource.data.commentsCount is number;
+        && request.resource.data.commentsCount is number
+        && request.resource.data.averageRating is number
+        && request.resource.data.averageRating == 0
+        && request.resource.data.ratingsCount is number
+        && request.resource.data.ratingsCount == 0;
       allow update: if owns(resource.data)
         || (
           signedIn()
           && request.resource.data.diff(resource.data).changedKeys().hasOnly(['likes', 'likesCount'])
-          && request.resource.data.likes == resource.data.likes + 1
-          && (
-            (
-              resource.data.keys().hasAny(['likesCount'])
-              && request.resource.data.likesCount == resource.data.likesCount + 1
-            )
-            || (
-              !resource.data.keys().hasAny(['likesCount'])
-              && request.resource.data.likesCount == 1
-            )
-          )
+          && request.resource.data.diff(resource.data).changedKeys().hasAny(['likes', 'likesCount'])
+          && recipeLikeCounterChangedByOne('likes')
+          && recipeLikeCounterChangedByOne('likesCount')
         )
         || (
           signedIn()
@@ -124,6 +166,10 @@ service cloud.firestore {
               && request.resource.data.commentsCount == 1
             )
           )
+        )
+        || (
+          signedIn()
+          && validRecipeRatingAggregate()
         );
       allow delete: if owns(resource.data);
 
@@ -155,6 +201,43 @@ service cloud.firestore {
       }
     }
 
+    match /collections/{collectionId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.id == collectionId
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.description is string
+        && request.resource.data.recipeCount == 0
+        && request.resource.data.keys().hasOnly(['id', 'ownerId', 'name', 'description', 'createdAt', 'recipeCount']);
+      allow update: if signedIn()
+        && resource.data.ownerId == request.auth.uid
+        && (
+          request.resource.data.diff(resource.data).changedKeys().hasOnly(['name', 'description'])
+          || (
+            request.resource.data.diff(resource.data).changedKeys().hasOnly(['recipeCount'])
+            && (
+              request.resource.data.recipeCount == resource.data.recipeCount + 1
+              || request.resource.data.recipeCount == resource.data.recipeCount - 1
+            )
+          )
+        );
+      allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    match /collectionRecipes/{collectionRecipeId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.collectionId is string
+        && request.resource.data.recipeId is string
+        && collectionRecipeId == request.resource.data.collectionId + '_' + request.resource.data.recipeId
+        && get(/databases/$(database)/documents/collections/$(request.resource.data.collectionId)).data.ownerId == request.auth.uid
+        && request.resource.data.keys().hasOnly(['collectionId', 'recipeId', 'addedAt']);
+      allow update: if false;
+      allow delete: if signedIn()
+        && get(/databases/$(database)/documents/collections/$(resource.data.collectionId)).data.ownerId == request.auth.uid;
+    }
+
     match /comments/{commentId} {
       allow read: if true;
       allow create: if signedIn()
@@ -173,7 +256,7 @@ service cloud.firestore {
         && likeId == request.auth.uid + '_' + request.resource.data.recipeId
         && request.resource.data.keys().hasOnly(['recipeId', 'userId', 'createdAt']);
       allow update: if false;
-      allow delete: if false;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
 
     match /savedRecipes/{saveId} {
@@ -188,9 +271,27 @@ service cloud.firestore {
       allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
 
+    match /recipeRatings/{ratingId} {
+      allow get: if signedIn() && ratingId.matches(request.auth.uid + '_.*');
+      allow list: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.id == ratingId
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.recipeId is string
+        && ratingId == request.auth.uid + '_' + request.resource.data.recipeId
+        && validRatingValue(request.resource.data.rating)
+        && request.resource.data.keys().hasOnly(['id', 'recipeId', 'userId', 'rating', 'createdAt']);
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['rating'])
+        && validRatingValue(request.resource.data.rating);
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
     match /following/{followId} {
       allow get: if signedIn()
         && followId.matches(request.auth.uid + '_.*');
+      allow list: if signedIn() && resource.data.followerId == request.auth.uid;
       allow create: if signedIn()
         && request.resource.data.followerId == request.auth.uid
         && request.resource.data.followedId is string
@@ -215,6 +316,35 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['followerId', 'followedId', 'createdAt']);
       allow update: if false;
       allow delete: if signedIn() && resource.data.followerId == request.auth.uid;
+    }
+
+    match /notifications/{notificationId} {
+      allow get, list: if signedIn() && resource.data.recipientId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.actorId == request.auth.uid
+        && request.resource.data.recipientId is string
+        && request.resource.data.recipientId != request.auth.uid
+        && request.resource.data.actorName is string
+        && request.resource.data.type in ['newFollower', 'recipeComment', 'recipeLike']
+        && request.resource.data.read == false
+        && request.resource.data.keys().hasOnly([
+          'recipientId',
+          'actorId',
+          'actorName',
+          'actorPhotoURL',
+          'type',
+          'recipeId',
+          'recipeTitle',
+          'commentId',
+          'commentText',
+          'read',
+          'createdAt'
+        ]);
+      allow update: if signedIn()
+        && resource.data.recipientId == request.auth.uid
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['read'])
+        && request.resource.data.read == true;
+      allow delete: if false;
     }
   }
 }

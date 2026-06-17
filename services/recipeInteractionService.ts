@@ -12,7 +12,8 @@ import {
 } from "firebase/firestore";
 
 import { auth, db } from "@/firebase/config";
-import { toSafeDate, toSafeString } from "@/services/firestoreConverters";
+import { toSafeDate, toSafeNumber, toSafeString } from "@/services/firestoreConverters";
+import { createNotificationInTransaction } from "@/services/notificationService";
 import { getRecipe, mapRecipeData } from "@/services/recipeService";
 import type { RecipeInteraction } from "@/types/recipeInteraction";
 import type { Recipe } from "@/types/recipe";
@@ -34,11 +35,6 @@ function interactionDocumentId(userId: string, recipeId: string) {
 
 function assertCurrentUser(userId: string) {
   const currentUserId = auth?.currentUser?.uid;
-
-  console.log("[GlobalChef] Current Firebase auth user check", {
-    providedUserId: userId,
-    firebaseAuthUserId: currentUserId ?? null
-  });
 
   if (currentUserId && currentUserId !== userId) {
     throw new Error("Signed-in user changed. Please try again.");
@@ -64,21 +60,12 @@ function subscribeToUserInteractions(
   onInteractions: (interactions: RecipeInteraction[]) => void,
   onError: (error: Error) => void
 ): Unsubscribe {
-  console.log(`[GlobalChef] Fetch saved recipes query`, { collectionName, userId });
   const interactionsQuery = query(collection(requireDb(), collectionName), where("userId", "==", userId));
 
   return onSnapshot(
     interactionsQuery,
     (snapshot) => {
       const interactions = snapshot.docs.map(mapInteractionDocument);
-
-      console.log(`[GlobalChef] Firestore query results`, {
-        collectionName,
-        userId,
-        count: interactions.length,
-        ids: interactions.map((interaction) => interaction.id),
-        recipeIds: interactions.map((interaction) => interaction.recipeId)
-      });
 
       onInteractions(interactions);
     },
@@ -113,10 +100,17 @@ export async function likeRecipeOnce(recipeId: string, userId: string) {
 
   return runTransaction(firestore, async (transaction) => {
     const likeSnapshot = await transaction.get(likeRef);
+    const recipeSnapshot = await transaction.get(recipeRef);
 
     if (likeSnapshot.exists()) {
       return false;
     }
+
+    if (!recipeSnapshot.exists()) {
+      throw new Error("Recipe not found.");
+    }
+
+    const recipeData = mapRecipeData(recipeSnapshot.id, recipeSnapshot.data());
 
     transaction.set(likeRef, {
       recipeId,
@@ -127,6 +121,57 @@ export async function likeRecipeOnce(recipeId: string, userId: string) {
       likes: increment(1),
       likesCount: increment(1)
     });
+    createNotificationInTransaction(transaction, firestore, {
+      recipientId: recipeData.authorId || recipeData.createdBy,
+      actorId: userId,
+      actorName: auth?.currentUser?.displayName || "GlobalChef cook",
+      actorPhotoURL: auth?.currentUser?.photoURL ?? null,
+      type: "recipeLike",
+      recipeId,
+      recipeTitle: recipeData.title
+    });
+
+    return true;
+  });
+}
+
+export async function unlikeRecipe(recipeId: string, userId: string) {
+  assertCurrentUser(userId);
+
+  const firestore = requireDb();
+  const likeRef = doc(firestore, "recipeLikes", interactionDocumentId(userId, recipeId));
+  const recipeRef = doc(firestore, "recipes", recipeId);
+
+  return runTransaction(firestore, async (transaction) => {
+    const likeSnapshot = await transaction.get(likeRef);
+    const recipeSnapshot = await transaction.get(recipeRef);
+
+    if (!likeSnapshot.exists()) {
+      return false;
+    }
+
+    if (!recipeSnapshot.exists()) {
+      throw new Error("Recipe not found.");
+    }
+
+    const recipeData = recipeSnapshot.data();
+    const nextLikes = Math.max(0, toSafeNumber(recipeData.likes) - 1);
+    const nextLikesCount = Math.max(0, toSafeNumber(recipeData.likesCount ?? recipeData.likes) - 1);
+    const recipeUpdates: Partial<Record<"likes" | "likesCount", number>> = {};
+
+    if (nextLikes !== toSafeNumber(recipeData.likes)) {
+      recipeUpdates.likes = nextLikes;
+    }
+
+    if (nextLikesCount !== toSafeNumber(recipeData.likesCount ?? recipeData.likes)) {
+      recipeUpdates.likesCount = nextLikesCount;
+    }
+
+    transaction.delete(likeRef);
+
+    if (Object.keys(recipeUpdates).length > 0) {
+      transaction.update(recipeRef, recipeUpdates);
+    }
 
     return true;
   });
@@ -139,22 +184,11 @@ export async function saveRecipe(recipeId: string, userId: string) {
   const saveRef = doc(firestore, "savedRecipes", interactionDocumentId(userId, recipeId));
   const recipeRef = doc(firestore, "recipes", recipeId);
 
-  console.log("[GlobalChef] Save action started", {
-    userId,
-    recipeId,
-    documentId: saveRef.id
-  });
-
   return runTransaction(firestore, async (transaction) => {
     const saveSnapshot = await transaction.get(saveRef);
     const recipeSnapshot = await transaction.get(recipeRef);
 
     if (saveSnapshot.exists()) {
-      console.log("[GlobalChef] Save action skipped duplicate", {
-        userId,
-        recipeId,
-        documentId: saveRef.id
-      });
       return false;
     }
 
@@ -177,24 +211,12 @@ export async function saveRecipe(recipeId: string, userId: string) {
       savesCount: increment(1)
     });
 
-    console.log("[GlobalChef] Save action wrote document", {
-      userId,
-      recipeId,
-      documentId: saveRef.id
-    });
-
     return true;
   });
 }
 
 export async function removeSavedRecipe(recipeId: string, userId: string) {
   assertCurrentUser(userId);
-
-  console.log("[GlobalChef] Remove saved recipe", {
-    userId,
-    recipeId,
-    documentId: interactionDocumentId(userId, recipeId)
-  });
 
   const firestore = requireDb();
   const saveRef = doc(firestore, "savedRecipes", interactionDocumentId(userId, recipeId));

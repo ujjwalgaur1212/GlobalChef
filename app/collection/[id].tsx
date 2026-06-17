@@ -1,6 +1,6 @@
-import { Redirect, useRouter } from "expo-router";
-import { ArrowLeft, Bookmark } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
+import { ArrowLeft, Folder } from "lucide-react-native";
+import { useEffect, useState } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -10,89 +10,62 @@ import { colors } from "@/constants/theme";
 import { useAuth } from "@/hooks/useAuth";
 import { useRecipeInteractions } from "@/hooks/useRecipeInteractions";
 import { useToast } from "@/hooks/useToast";
-import { getRecipesForInteractions } from "@/services/recipeInteractionService";
+import { getCollectionById, getCollectionErrorMessage, getCollectionRecipes } from "@/services/collectionService";
+import type { RecipeCollection } from "@/types/collection";
 import type { Recipe } from "@/types/recipe";
 
-export default function SavedRecipesScreen() {
+export default function CollectionDetailScreen() {
+  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const collectionId = String((Array.isArray(id) ? id[0] : id) ?? "");
   const router = useRouter();
   const { user, initializing } = useAuth();
-  const {
-    likedRecipeIds,
-    savedRecipeIds,
-    savedInteractions,
-    isLoading: areInteractionsLoading,
-    error: interactionError,
-    toggleLikedRecipeById,
-    toggleSavedRecipeById
-  } = useRecipeInteractions(user?.id);
   const { showToast } = useToast();
+  const { likedRecipeIds, savedRecipeIds, toggleLikedRecipeById, toggleSavedRecipeById } = useRecipeInteractions(user?.id);
+  const [recipeCollection, setRecipeCollection] = useState<RecipeCollection | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [isLoadingRecipes, setIsLoadingRecipes] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingLikeIds, setPendingLikeIds] = useState<Set<string>>(new Set());
   const [pendingSaveIds, setPendingSaveIds] = useState<Set<string>>(new Set());
 
-  const sortedSavedInteractions = useMemo(
-    () =>
-      [...savedInteractions].sort((left, right) => {
-        const leftTime = left.createdAt?.getTime() ?? 0;
-        const rightTime = right.createdAt?.getTime() ?? 0;
-
-        return rightTime - leftTime;
-      }),
-    [savedInteractions]
-  );
-
   useEffect(() => {
     let isMounted = true;
+    const cleanCollectionId = collectionId.trim();
 
-    if (!user) {
-      setRecipes([]);
-      setIsLoadingRecipes(initializing);
+    if (!cleanCollectionId) {
+      setError("Collection not found.");
+      setIsLoading(false);
       return () => {
         isMounted = false;
       };
     }
 
-    if (areInteractionsLoading) {
-      setIsLoadingRecipes(true);
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    if (sortedSavedInteractions.length === 0) {
-      setRecipes([]);
-      setIsLoadingRecipes(false);
-      setError(interactionError);
-      return () => {
-        isMounted = false;
-      };
-    }
-
-    setIsLoadingRecipes(true);
-    getRecipesForInteractions(sortedSavedInteractions)
-      .then((nextRecipes) => {
-        if (isMounted) {
-          setRecipes(nextRecipes);
-          setError(interactionError);
+    setIsLoading(true);
+    Promise.all([getCollectionById(cleanCollectionId), getCollectionRecipes(cleanCollectionId)])
+      .then(([nextCollection, nextRecipes]) => {
+        if (!isMounted) {
+          return;
         }
+
+        setRecipeCollection(nextCollection);
+        setRecipes(nextRecipes);
+        setError(nextCollection ? null : "Collection not found.");
       })
-      .catch((recipeError) => {
+      .catch((collectionError) => {
         if (isMounted) {
-          setError(recipeError instanceof Error ? recipeError.message : "Could not load saved recipes.");
+          setError(getCollectionErrorMessage(collectionError));
         }
       })
       .finally(() => {
         if (isMounted) {
-          setIsLoadingRecipes(false);
+          setIsLoading(false);
         }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [areInteractionsLoading, initializing, interactionError, sortedSavedInteractions, user]);
+  }, [collectionId]);
 
   async function handleLike(recipeId: string) {
     if (pendingLikeIds.has(recipeId)) {
@@ -136,7 +109,7 @@ export default function SavedRecipesScreen() {
     }
   }
 
-  if (initializing) {
+  if (initializing || isLoading) {
     return <RecipeSkeletonList />;
   }
 
@@ -152,21 +125,17 @@ export default function SavedRecipesScreen() {
           data={recipes}
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
-            isLoadingRecipes ? (
-              <RecipeSkeletonList />
-            ) : (
-              <View className="mx-6 rounded-chef border border-chef-line bg-chef-panel px-5 py-8">
-                <View className="mx-auto mb-4 h-14 w-14 items-center justify-center rounded-full bg-chef-saffron/15">
-                  <Bookmark stroke={colors.saffron} size={24} />
-                </View>
-                <Text className="text-center text-chef-lg font-extrabold text-chef-cream">
-                  {error ? "Could not load saved recipes" : "No saved recipes yet"}
-                </Text>
-                <Text className="mt-2 text-center text-chef-sm text-chef-muted">
-                  {error || "Tap the bookmark on any recipe to keep it here."}
-                </Text>
+            <View className="mx-6 rounded-chef border border-chef-line bg-chef-panel px-5 py-8">
+              <View className="mx-auto mb-4 h-14 w-14 items-center justify-center rounded-full bg-chef-saffron/15">
+                <Folder stroke={colors.saffron} size={24} />
               </View>
-            )
+              <Text className="text-center text-chef-lg font-extrabold text-chef-cream">
+                {error ? "Could not load collection" : "No recipes yet"}
+              </Text>
+              <Text className="mt-2 text-center text-chef-sm text-chef-muted">
+                {error || "Save recipes into this collection from any recipe detail page."}
+              </Text>
+            </View>
           }
           ListHeaderComponent={
             <View className="px-6 pb-5 pt-3">
@@ -174,11 +143,17 @@ export default function SavedRecipesScreen() {
                 <Pressable className="h-11 w-11 items-center justify-center rounded-full bg-chef-panel" onPress={() => router.back()}>
                   <ArrowLeft stroke={colors.cream} size={22} strokeWidth={2.4} />
                 </Pressable>
-                <Text className="text-chef-sm font-extrabold uppercase text-chef-saffron">{String(recipes.length)} saved</Text>
+                <Text className="text-chef-sm font-extrabold uppercase text-chef-saffron">
+                  {String(recipeCollection?.recipeCount ?? recipes.length)} recipes
+                </Text>
               </View>
-              <Text className="mt-5 text-chef-sm font-bold uppercase text-chef-saffron">Profile</Text>
-              <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">Saved recipes</Text>
-              <Text className="mt-2 text-chef-base leading-7 text-chef-muted">Your private GlobalChef cookbook, ready when hunger gets serious.</Text>
+              <Text className="mt-5 text-chef-sm font-bold uppercase text-chef-saffron">Collection</Text>
+              <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">
+                {recipeCollection?.name || "Recipe collection"}
+              </Text>
+              {recipeCollection?.description ? (
+                <Text className="mt-2 text-chef-base leading-7 text-chef-muted">{recipeCollection.description}</Text>
+              ) : null}
             </View>
           }
           renderItem={({ item, index }) => (

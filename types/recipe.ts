@@ -29,6 +29,8 @@ export type Recipe = {
   likesCount: number;
   savesCount: number;
   commentsCount: number;
+  averageRating: number;
+  ratingsCount: number;
 };
 
 export type CreateRecipeInput = {
@@ -46,3 +48,17 @@ export type CreateRecipeInput = {
   authorId: string;
   authorName: string;
 };
+export type UpdateRecipeInput = {
+  title: string;
+  description: string;
+  country: string;
+  cuisine: string;
+  cookTime: string;
+  difficulty: RecipeDifficulty;
+  calories: number;
+  ingredients: string[];
+  steps: string[];
+  tags: string[];
+  imageUri: string;
+};
+

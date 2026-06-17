@@ -9,7 +9,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
-  setDoc,
+  startAfter,
   updateDoc,
   where,
   writeBatch,
@@ -21,13 +21,24 @@ import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 
 import { db, storage } from "@/firebase/config";
 import { toRecipeDifficulty, toSafeDate, toSafeNumber, toSafeString, toSafeStringArray } from "@/services/firestoreConverters";
-import type { CreateRecipeInput, Recipe, RecipeSearchSort } from "@/types/recipe";
+import type { CreateRecipeInput, UpdateRecipeInput, Recipe, RecipeSearchSort } from "@/types/recipe";
 
 type Unsubscribe = () => void;
+export type RecipePageCursor = QueryDocumentSnapshot<DocumentData> | null;
 
 type SeedRecipe = Omit<
   Recipe,
-  "id" | "recipeId" | "createdAt" | "createdBy" | "authorId" | "authorName" | "likesCount" | "savesCount" | "commentsCount"
+  | "id"
+  | "recipeId"
+  | "createdAt"
+  | "createdBy"
+  | "authorId"
+  | "authorName"
+  | "likesCount"
+  | "savesCount"
+  | "commentsCount"
+  | "averageRating"
+  | "ratingsCount"
 >;
 
 const seedRecipes: SeedRecipe[] = [
@@ -138,7 +149,9 @@ export function mapRecipeData(documentId: string, data: DocumentData): Recipe {
     likes: toSafeNumber(data.likesCount ?? data.likes),
     likesCount: toSafeNumber(data.likesCount ?? data.likes),
     savesCount: toSafeNumber(data.savesCount),
-    commentsCount: toSafeNumber(data.commentsCount)
+    commentsCount: toSafeNumber(data.commentsCount),
+    averageRating: toSafeNumber(data.averageRating),
+    ratingsCount: toSafeNumber(data.ratingsCount)
   };
 }
 
@@ -201,6 +214,28 @@ export function subscribeToRecipeSearch(
   );
 }
 
+export async function getRecipeDiscoveryPage(sort: RecipeSearchSort = "newest", pageSize = 24, cursor: RecipePageCursor = null) {
+  const constraints: QueryConstraint[] =
+    sort === "mostLiked"
+      ? [orderBy("likesCount", "desc")]
+      : sort === "mostCommented"
+        ? [orderBy("commentsCount", "desc")]
+        : [orderBy("createdAt", "desc")];
+
+  if (cursor) {
+    constraints.push(startAfter(cursor));
+  }
+
+  constraints.push(limit(pageSize));
+
+  const snapshot = await getDocs(query(recipesCollection(), ...constraints));
+
+  return {
+    recipes: snapshot.docs.map(mapRecipeDocument),
+    cursor: snapshot.docs[snapshot.docs.length - 1] ?? null
+  };
+}
+
 export function subscribeToRecipesByAuthor(authorId: string, onRecipes: (recipes: Recipe[]) => void, onError: (error: Error) => void): Unsubscribe {
   return onSnapshot(
     query(recipesCollection(), where("authorId", "==", authorId)),
@@ -235,9 +270,19 @@ export async function seedRecipesIfEmpty(createdBy: string) {
       createdAt: serverTimestamp(),
       likesCount: recipe.likes,
       savesCount: 0,
-      commentsCount: 0
+      commentsCount: 0,
+      averageRating: 0,
+      ratingsCount: 0
     });
   });
+  batch.set(
+    doc(requireDb(), "users", createdBy),
+    {
+      recipeCount: increment(seedRecipes.length),
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
 
   await batch.commit();
   return true;
@@ -275,8 +320,9 @@ export async function createRecipe(input: CreateRecipeInput) {
   const authorId = toSafeString(input.authorId);
   const imageUrl = await uploadRecipeImage(toSafeString(input.imageUri), recipeRef.id, authorId);
   const calories = toSafeNumber(input.calories);
+  const batch = writeBatch(requireDb());
 
-  await setDoc(recipeRef, {
+  batch.set(recipeRef, {
     recipeId: recipeRef.id,
     title: toSafeString(input.title).trim(),
     description: toSafeString(input.description).trim(),
@@ -299,12 +345,50 @@ export async function createRecipe(input: CreateRecipeInput) {
     likes: 0,
     likesCount: 0,
     savesCount: 0,
-    commentsCount: 0
+    commentsCount: 0,
+    averageRating: 0,
+    ratingsCount: 0
   });
+  batch.set(
+    doc(requireDb(), "users", authorId),
+    {
+      recipeCount: increment(1),
+      updatedAt: serverTimestamp()
+    },
+    { merge: true }
+  );
+
+  await batch.commit();
 
   return recipeRef.id;
 }
+export async function updateRecipe(
+  recipeId: string,
+  input: UpdateRecipeInput
+) {
+  const calories = Number(input.calories) || 0;
 
+  await updateDoc(doc(requireDb(), "recipes", recipeId), {
+    title: toSafeString(input.title).trim(),
+    description: toSafeString(input.description).trim(),
+    country: toSafeString(input.country).trim(),
+    cuisine: toSafeString(input.cuisine).trim(),
+    cookTime: toSafeString(input.cookTime).trim(),
+    difficulty: toRecipeDifficulty(input.difficulty),
+
+    calories,
+
+    nutrition: {
+      calories,
+    },
+
+    ingredients: toSafeStringArray(input.ingredients),
+    steps: toSafeStringArray(input.steps),
+    tags: toSafeStringArray(input.tags),
+
+    imageUrl: input.imageUri,
+  });
+}
 export async function likeRecipe(recipeId: string) {
   await updateDoc(doc(requireDb(), "recipes", recipeId), {
     likes: increment(1),

@@ -1,15 +1,19 @@
 import {
+  collection,
   doc,
   increment,
   onSnapshot,
+  query,
   runTransaction,
   serverTimestamp,
+  where,
   type DocumentData,
   type DocumentSnapshot
 } from "firebase/firestore";
 
 import { auth, db } from "@/firebase/config";
 import { toSafeDate, toSafeString } from "@/services/firestoreConverters";
+import { createNotificationInTransaction } from "@/services/notificationService";
 import type { FollowRelationship } from "@/types/follow";
 
 type Unsubscribe = () => void;
@@ -81,6 +85,20 @@ export function subscribeToFollowState(
   );
 }
 
+export function subscribeToFollowingIds(
+  followerId: string,
+  onFollowedIds: (followedIds: string[]) => void,
+  onError: (error: Error) => void
+): Unsubscribe {
+  return onSnapshot(
+    query(collection(requireDb(), "following"), where("followerId", "==", followerId)),
+    (snapshot) => {
+      onFollowedIds(snapshot.docs.map((document) => toSafeString(document.data().followedId)).filter(Boolean));
+    },
+    onError
+  );
+}
+
 export async function followChef(followerId: string, followedId: string) {
   assertCurrentUser(followerId);
 
@@ -114,6 +132,13 @@ export async function followChef(followerId: string, followedId: string) {
     });
     transaction.update(followedUserRef, {
       followersCount: increment(1)
+    });
+    createNotificationInTransaction(transaction, firestore, {
+      recipientId: followedId,
+      actorId: followerId,
+      actorName: auth?.currentUser?.displayName || "GlobalChef cook",
+      actorPhotoURL: auth?.currentUser?.photoURL ?? null,
+      type: "newFollower"
     });
 
     return true;
