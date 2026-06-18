@@ -1,5 +1,7 @@
 import { Redirect, Tabs } from "expo-router";
 import { Bell, ChefHat, House, PlusCircle, Search, UserRound, UsersRound } from "lucide-react-native";
+import { useTranslation } from "react-i18next";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { colors } from "@/constants/theme";
@@ -7,7 +9,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNotifications } from "@/hooks/useNotifications";
 
 export default function TabsLayout() {
+  const { t } = useTranslation();
   const { user, initializing } = useAuth();
+  const insets = useSafeAreaInsets();
   const { unreadCount } = useNotifications(user?.id);
 
   if (initializing) {
@@ -17,6 +21,9 @@ export default function TabsLayout() {
   if (!user) {
     return <Redirect href="/(auth)/login" />;
   }
+
+  const paddingBottom = Math.max(insets.bottom, 24);
+  const height = 62 + paddingBottom;
 
   return (
     <Tabs
@@ -31,8 +38,8 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.panel,
           borderTopColor: colors.line,
-          height: 86,
-          paddingBottom: 24,
+          height,
+          paddingBottom,
           paddingTop: 10
         }
       }}
@@ -40,49 +47,42 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: t("tabs.home"),
           tabBarIcon: ({ color, size }) => <House stroke={color} size={size} strokeWidth={2.3} />
         }}
       />
       <Tabs.Screen
         name="upload"
         options={{
-          title: "Upload",
+          title: t("tabs.upload"),
           tabBarIcon: ({ color, size }) => <PlusCircle stroke={color} size={size} strokeWidth={2.3} />
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
-          title: "Search",
+          title: t("tabs.search"),
           tabBarIcon: ({ color, size }) => <Search stroke={color} size={size} strokeWidth={2.3} />
         }}
       />
       <Tabs.Screen
         name="community"
         options={{
-          title: "Community",
+          title: t("tabs.community"),
           tabBarIcon: ({ color, size }) => <UsersRound stroke={color} size={size} strokeWidth={2.3} />
         }}
       />
       <Tabs.Screen
         name="notifications"
         options={{
-          title: "Alerts",
-          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-          tabBarBadgeStyle: {
-            backgroundColor: colors.tomato,
-            color: colors.cream,
-            fontSize: 11,
-            fontWeight: "800"
-          },
+          title: unreadCount > 0 ? `${t("tabs.alerts")} (${unreadCount})` : t("tabs.alerts"),
           tabBarIcon: ({ color, size }) => <Bell stroke={color} size={size} strokeWidth={2.3} />
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: t("tabs.profile"),
           tabBarIcon: ({ color, size }) =>
             user.photoURL ? <UserRound stroke={color} size={size} strokeWidth={2.3} /> : <ChefHat stroke={color} size={size} strokeWidth={2.3} />
         }}

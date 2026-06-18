@@ -1,5 +1,6 @@
 import { SlidersHorizontal, Search } from "lucide-react-native";
 import { TextInput, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 import { colors } from "@/constants/theme";
 
@@ -9,6 +10,7 @@ type SearchBarProps = {
 };
 
 export function SearchBar({ value, onChangeText }: SearchBarProps) {
+  const { t } = useTranslation();
   const inputValue = String(value ?? "");
 
   return (
@@ -18,7 +20,7 @@ export function SearchBar({ value, onChangeText }: SearchBarProps) {
         autoCapitalize="none"
         className="mx-3 flex-1 text-chef-base font-semibold text-chef-cream"
         onChangeText={onChangeText}
-        placeholder="Search dishes, countries, cuisines"
+        placeholder={t("home.searchPlaceholder")}
         placeholderTextColor={colors.textMuted}
         selectionColor={colors.saffron}
         value={inputValue}

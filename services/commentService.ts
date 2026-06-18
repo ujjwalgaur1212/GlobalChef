@@ -13,7 +13,7 @@ import {
 
 import { auth, db } from "@/firebase/config";
 import { toSafeDate, toSafeNumber, toSafeString } from "@/services/firestoreConverters";
-import { createNotificationInTransaction } from "@/services/notificationService";
+import { createCommentNotification } from "@/services/notificationService";
 import { mapRecipeData } from "@/services/recipeService";
 import type { AuthUser } from "@/types/auth";
 import type { RecipeComment } from "@/types/comment";
@@ -151,17 +151,15 @@ export async function addRecipeComment(recipeId: string, text: string, user: Aut
     transaction.update(nextRecipeRef, {
       commentsCount: increment(1)
     });
-    createNotificationInTransaction(transaction, firestore, {
-      recipientId: recipeData.authorId || recipeData.createdBy,
-      actorId: user.id,
-      actorName: user.displayName || "GlobalChef cook",
-      actorPhotoURL: user.photoURL ?? null,
-      type: "recipeComment",
+    createCommentNotification(
+      user.id,
+      user.displayName || "GlobalChef cook",
+      user.photoURL ?? null,
+      recipeData.authorId || recipeData.createdBy,
       recipeId,
-      recipeTitle: recipeData.title,
-      commentId: nextCommentRef.id,
-      commentText: trimmedText.slice(0, 160)
-    });
+      trimmedText.slice(0, 160),
+      transaction
+    );
   });
 
   return nextCommentRef.id;

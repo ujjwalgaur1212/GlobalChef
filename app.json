@@ -33,7 +33,8 @@
           "photosPermission": "GlobalChef needs photo library access so you can choose recipe images to upload.",
           "cameraPermission": "GlobalChef needs camera access so you can take recipe photos."
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "web": {
       "bundler": "metro"

@@ -2,6 +2,7 @@ import { Link, router } from "expo-router";
 import { LockKeyhole, Mail, UserRound } from "lucide-react-native";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { Pressable, Text, View } from "react-native";
 
 import { AuthScreenShell } from "@/components/AuthScreenShell";
@@ -16,6 +17,7 @@ import type { SignupFormValues } from "@/types/auth";
 export default function SignupScreen() {
   const { signUp } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
+  const { t } = useTranslation();
   const {
     control,
     getValues,
@@ -43,15 +45,15 @@ export default function SignupScreen() {
 
   return (
     <AuthScreenShell
-      eyebrow="Join the table"
-      title="Create your chef profile."
-      subtitle="Your account will power recipe uploads, saved discoveries, and community features as they arrive."
+      eyebrow={t("auth.signup.signupEyebrow")}
+      title={t("auth.signup.signupTitle")}
+      subtitle={t("auth.signup.subtitle")}
       footer={
         <View className="flex-row items-center justify-center">
-          <Text className="text-chef-sm text-chef-muted">Already have an account? </Text>
+          <Text className="text-chef-sm text-chef-muted">{t("auth.signup.haveAccountText")} </Text>
           <Link href="/(auth)/login" asChild>
             <Pressable>
-              <Text className="text-chef-sm font-bold text-chef-saffron">Sign in</Text>
+              <Text className="text-chef-sm font-bold text-chef-saffron">{t("auth.signup.signinBtn")}</Text>
             </Pressable>
           </Link>
         </View>
@@ -62,10 +64,10 @@ export default function SignupScreen() {
           control={control}
           name="displayName"
           rules={{
-            required: "Name is required.",
+            required: t("auth.validation.displayNameRequired"),
             minLength: {
               value: 2,
-              message: "Name must be at least 2 characters."
+              message: t("auth.validation.displayNameMinLength")
             }
           }}
           render={({ field: { onBlur, onChange, value } }) => (
@@ -73,7 +75,7 @@ export default function SignupScreen() {
               autoCapitalize="words"
               autoComplete="name"
               error={errors.displayName?.message}
-              label="Display name"
+              label={t("auth.signup.nameLabel")}
               leftIcon={<UserRound stroke={colors.textMuted} size={20} />}
               onBlur={onBlur}
               onChangeText={onChange}
@@ -88,10 +90,10 @@ export default function SignupScreen() {
           control={control}
           name="email"
           rules={{
-            required: "Email is required.",
+            required: t("auth.validation.emailRequired"),
             pattern: {
               value: EMAIL_REGEX,
-              message: "Enter a valid email address."
+              message: t("auth.validation.emailInvalid")
             }
           }}
           render={({ field: { onBlur, onChange, value } }) => (
@@ -100,11 +102,11 @@ export default function SignupScreen() {
               autoComplete="email"
               error={errors.email?.message}
               keyboardType="email-address"
-              label="Email"
+              label={t("auth.login.emailLabel")}
               leftIcon={<Mail stroke={colors.textMuted} size={20} />}
               onBlur={onBlur}
               onChangeText={onChange}
-              placeholder="you@example.com"
+              placeholder={t("auth.validation.emailPlaceholder")}
               textContentType="emailAddress"
               value={value}
             />
@@ -115,10 +117,10 @@ export default function SignupScreen() {
           control={control}
           name="password"
           rules={{
-            required: "Password is required.",
+            required: t("auth.validation.passwordRequired"),
             minLength: {
               value: PASSWORD_MIN_LENGTH,
-              message: `Password must be at least ${PASSWORD_MIN_LENGTH} characters.`
+              message: t("auth.validation.passwordMinLength", { count: PASSWORD_MIN_LENGTH })
             }
           }}
           render={({ field: { onBlur, onChange, value } }) => (
@@ -126,11 +128,11 @@ export default function SignupScreen() {
               autoCapitalize="none"
               autoComplete="new-password"
               error={errors.password?.message}
-              label="Password"
+              label={t("auth.login.passwordLabel")}
               leftIcon={<LockKeyhole stroke={colors.textMuted} size={20} />}
               onBlur={onBlur}
               onChangeText={onChange}
-              placeholder="Create a password"
+              placeholder={t("auth.validation.createPasswordPlaceholder")}
               secureTextEntry
               textContentType="newPassword"
               value={value}
@@ -142,19 +144,19 @@ export default function SignupScreen() {
           control={control}
           name="confirmPassword"
           rules={{
-            required: "Confirm your password.",
-            validate: (value) => value === getValues("password") || "Passwords do not match."
+            required: t("auth.validation.confirmPasswordRequired"),
+            validate: (value) => value === getValues("password") || t("auth.validation.passwordsNotMatch")
           }}
           render={({ field: { onBlur, onChange, value } }) => (
             <FormInput
               autoCapitalize="none"
               autoComplete="new-password"
               error={errors.confirmPassword?.message}
-              label="Confirm password"
+              label={t("auth.validation.confirmPasswordLabel")}
               leftIcon={<LockKeyhole stroke={colors.textMuted} size={20} />}
               onBlur={onBlur}
               onChangeText={onChange}
-              placeholder="Repeat your password"
+              placeholder={t("auth.validation.confirmPasswordPlaceholder")}
               secureTextEntry
               textContentType="newPassword"
               value={value}
@@ -168,7 +170,7 @@ export default function SignupScreen() {
           </View>
         ) : null}
 
-        <Button isLoading={isSubmitting} onPress={handleSubmit(onSubmit)} title="Create account" />
+        <Button isLoading={isSubmitting} onPress={handleSubmit(onSubmit)} title={t("auth.signup.signupBtn")} />
       </View>
     </AuthScreenShell>
   );

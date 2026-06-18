@@ -3,6 +3,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { ImagePlus, MapPin, Utensils } from "lucide-react-native";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, ImageBackground, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -30,6 +31,7 @@ const initialSteps = [""];
 const initialTags = [""];
 
 export default function UploadTab() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -80,8 +82,8 @@ export default function UploadTab() {
 
       if (!permission.granted) {
         const message = permission.canAskAgain
-          ? "Allow photo library access to upload a recipe image."
-          : "Photo access is disabled. Enable it in iOS Settings to upload recipe images.";
+          ? t("upload.errors.imagePermission")
+          : t("upload.errors.imagePermissionDisabled");
 
         setErrors((current) => ({ ...current, image: message }));
         showToast(message, "error");
@@ -102,7 +104,7 @@ export default function UploadTab() {
         setErrors((current) => ({ ...current, image: undefined }));
       }
     } catch {
-      const message = "Could not open your photo library. Rebuild the iOS app after updating permissions.";
+      const message = t("upload.errors.imageSelectError");
 
       setErrors((current) => ({ ...current, image: message }));
       showToast(message, "error");
@@ -116,35 +118,35 @@ export default function UploadTab() {
     const nextErrors: UploadErrors = {};
 
     if (!title.trim()) {
-      nextErrors.title = "Recipe title is required.";
+      nextErrors.title = t("upload.errors.title");
     }
 
     if (!description.trim()) {
-      nextErrors.description = "Description is required.";
+      nextErrors.description = t("upload.errors.description");
     }
 
     if (!country.trim()) {
-      nextErrors.country = "Country is required.";
+      nextErrors.country = t("upload.errors.country");
     }
 
     if (!cuisine.trim()) {
-      nextErrors.cuisine = "Cuisine type is required.";
+      nextErrors.cuisine = t("upload.errors.cuisine");
     }
 
     if (cleanedIngredients.length === 0) {
-      nextErrors.ingredients = "Add at least one ingredient.";
+      nextErrors.ingredients = t("upload.errors.ingredients");
     }
 
     if (cleanedSteps.length === 0) {
-      nextErrors.steps = "Add at least one step.";
+      nextErrors.steps = t("upload.errors.steps");
     }
 
     if (cleanedTags.length === 0) {
-      nextErrors.tags = "Add at least one tag.";
+      nextErrors.tags = t("upload.errors.tags");
     }
 
     if (!imageUri) {
-      nextErrors.image = "Recipe image is required.";
+      nextErrors.image = t("upload.errors.image");
     }
 
     setErrors(nextErrors);
@@ -172,16 +174,16 @@ export default function UploadTab() {
 
   async function handleSubmit() {
     if (!user) {
-      setFormError("You must be signed in to upload a recipe.");
-      showToast("Sign in before uploading a recipe.", "error");
+      setFormError(t("upload.errors.notSignedIn"));
+      showToast(t("upload.errors.signInBefore"), "error");
       return;
     }
 
     const validation = validateForm();
 
     if (!validation.isValid || !imageUri) {
-      setFormError("Complete the required fields before uploading.");
-      showToast("Complete the required fields before uploading.", "error");
+      setFormError(t("upload.errors.fillFields"));
+      showToast(t("upload.errors.fillFields"), "error");
       return;
     }
 
@@ -203,7 +205,7 @@ export default function UploadTab() {
       });
 
       resetForm();
-      showToast("Recipe uploaded to the GlobalChef feed.", "success");
+      showToast(t("upload.success"), "success");
       router.replace("/(tabs)");
     } catch (error) {
       const message = getRecipeErrorMessage(error);
@@ -220,10 +222,10 @@ export default function UploadTab() {
         <KeyboardAvoidingView className="flex-1" behavior={Platform.OS === "ios" ? "padding" : undefined}>
           <ScrollView contentContainerStyle={{ paddingBottom: 124 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
             <View className="px-6 pb-6 pt-3">
-              <Text className="text-chef-sm font-bold uppercase text-chef-saffron">Upload recipe</Text>
-              <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">Share a dish with the world.</Text>
+              <Text className="text-chef-sm font-bold uppercase text-chef-saffron">{t("upload.title")}</Text>
+              <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">{t("upload.headerTitle")}</Text>
               <Text className="mt-3 text-chef-base leading-7 text-chef-muted">
-                Add the core recipe details, upload a strong image, and publish it to the GlobalChef feed.
+                {t("upload.subtitle")}
               </Text>
             </View>
 
@@ -232,8 +234,8 @@ export default function UploadTab() {
                 {imageUri ? (
                   <ImageBackground source={{ uri: imageUri }} className="h-60 justify-end" resizeMode="cover">
                     <View className="bg-chef-black/65 px-5 py-4">
-                      <Text className="text-chef-base font-extrabold text-chef-cream">Change image</Text>
-                      <Text className="mt-1 text-chef-sm text-chef-muted">Tap to choose another photo</Text>
+                      <Text className="text-chef-base font-extrabold text-chef-cream">{t("upload.changeImage")}</Text>
+                      <Text className="mt-1 text-chef-sm text-chef-muted">{t("upload.tapChoosePhoto")}</Text>
                     </View>
                   </ImageBackground>
                 ) : (
@@ -241,46 +243,46 @@ export default function UploadTab() {
                     <View className="h-16 w-16 items-center justify-center rounded-chef bg-chef-saffron">
                       <ImagePlus stroke={colors.background} size={28} strokeWidth={2.5} />
                     </View>
-                    <Text className="mt-5 text-center text-chef-lg font-extrabold text-chef-cream">Pick a recipe image</Text>
-                    <Text className="mt-2 text-center text-chef-sm leading-6 text-chef-muted">Choose a gallery photo to preview before upload.</Text>
+                    <Text className="mt-5 text-center text-chef-lg font-extrabold text-chef-cream">{t("upload.pickImage")}</Text>
+                    <Text className="mt-2 text-center text-chef-sm leading-6 text-chef-muted">{t("upload.choosePhotoPreview")}</Text>
                   </View>
                 )}
               </Pressable>
               {isCompressingImage ? (
                 <View className="mt-3 flex-row items-center">
                   <ActivityIndicator color={colors.saffron} />
-                  <Text className="ml-3 text-chef-sm font-semibold text-chef-muted">Optimizing image...</Text>
+                  <Text className="ml-3 text-chef-sm font-semibold text-chef-muted">{t("upload.optimizingImage")}</Text>
                 </View>
               ) : null}
               {errors.image ? <Text className="mt-2 text-chef-xs font-medium text-chef-tomato">{errors.image}</Text> : null}
             </View>
 
             <View className="mt-6 gap-5 px-6">
-              <FormInput error={errors.title} label="Recipe title" onChangeText={setTitle} placeholder="Kyoto Miso Ramen" value={title} />
+              <FormInput error={errors.title} label={t("upload.titleLabel")} onChangeText={setTitle} placeholder={t("upload.titlePlaceholder")} value={title} />
               <FormInput
                 error={errors.description}
-                label="Description"
+                label={t("upload.descLabel")}
                 multiline
                 numberOfLines={4}
                 onChangeText={setDescription}
-                placeholder="A silky miso bowl with mushrooms, scallions, and a soft egg finish."
+                placeholder={t("upload.descPlaceholder")}
                 textAlignVertical="top"
                 value={description}
               />
               <FormInput
                 error={errors.country}
-                label="Country"
+                label={t("upload.countryLabel")}
                 leftIcon={<MapPin stroke={colors.textMuted} size={20} />}
                 onChangeText={setCountry}
-                placeholder="Japan"
+                placeholder={t("upload.countryPlaceholder")}
                 value={country}
               />
               <FormInput
                 error={errors.cuisine}
-                label="Cuisine type"
+                label={t("upload.cuisineLabel")}
                 leftIcon={<Utensils stroke={colors.textMuted} size={20} />}
                 onChangeText={setCuisine}
-                placeholder="Japanese"
+                placeholder={t("upload.cuisinePlaceholder")}
                 value={cuisine}
               />
 
@@ -288,8 +290,8 @@ export default function UploadTab() {
               <DynamicFieldList
                 error={errors.ingredients}
                 onChangeValues={setIngredients}
-                placeholder="Ingredient"
-                title="Ingredients"
+                placeholder={t("upload.ingredientPlaceholder")}
+                title={t("upload.ingredientsTitle")}
                 values={ingredients}
               />
 
@@ -297,16 +299,16 @@ export default function UploadTab() {
                 error={errors.steps}
                 multiline
                 onChangeValues={setSteps}
-                placeholder="Step"
-                title="Steps"
+                placeholder={t("upload.stepPlaceholder")}
+                title={t("upload.stepsTitle")}
                 values={steps}
               />
 
               <DynamicFieldList
                 error={errors.tags}
                 onChangeValues={setTags}
-                placeholder="Tag"
-                title="Tags"
+                placeholder={t("upload.tagPlaceholder")}
+                title={t("upload.tagsTitle")}
                 values={tags}
               />
 
@@ -320,13 +322,13 @@ export default function UploadTab() {
                 isLoading={isUploading || isCompressingImage}
                 disabled={!!isCompressingImage}
                 onPress={handleSubmit}
-                title={isUploading ? "Uploading recipe" : "Publish recipe"}
+                title={isUploading ? t("upload.uploadingRecipe") : t("upload.publishRecipe")}
               />
 
               {isUploading ? (
                 <View className="flex-row items-center justify-center">
                   <ActivityIndicator color={colors.saffron} />
-                  <Text className="ml-3 text-chef-sm font-semibold text-chef-muted">Uploading image and saving recipe...</Text>
+                  <Text className="ml-3 text-chef-sm font-semibold text-chef-muted">{t("upload.savingRecipe")}</Text>
                 </View>
               ) : null}
             </View>

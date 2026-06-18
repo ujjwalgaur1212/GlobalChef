@@ -1,5 +1,6 @@
 import "react-native-gesture-handler";
 import "@/global.css";
+import "@/services/i18n";
 
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -10,7 +11,7 @@ import { colors } from "@/constants/theme";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ToastProvider } from "@/hooks/useToast";
 
-export default function RootLayout() {
+export default function Layout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <SafeAreaProvider>

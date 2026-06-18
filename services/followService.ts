@@ -13,7 +13,7 @@ import {
 
 import { auth, db } from "@/firebase/config";
 import { toSafeDate, toSafeString } from "@/services/firestoreConverters";
-import { createNotificationInTransaction } from "@/services/notificationService";
+import { createFollowNotification } from "@/services/notificationService";
 import type { FollowRelationship } from "@/types/follow";
 
 type Unsubscribe = () => void;
@@ -133,13 +133,13 @@ export async function followChef(followerId: string, followedId: string) {
     transaction.update(followedUserRef, {
       followersCount: increment(1)
     });
-    createNotificationInTransaction(transaction, firestore, {
-      recipientId: followedId,
-      actorId: followerId,
-      actorName: auth?.currentUser?.displayName || "GlobalChef cook",
-      actorPhotoURL: auth?.currentUser?.photoURL ?? null,
-      type: "newFollower"
-    });
+    createFollowNotification(
+      followerId,
+      auth?.currentUser?.displayName || "GlobalChef cook",
+      auth?.currentUser?.photoURL ?? null,
+      followedId,
+      transaction
+    );
 
     return true;
   });

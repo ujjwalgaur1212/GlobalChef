@@ -1,16 +1,17 @@
-export type NotificationType = "newFollower" | "recipeComment" | "recipeLike";
+export type NotificationType = "follow" | "comment" | "like";
 
-export type GlobalChefNotification = {
+export interface Notification {
   id: string;
-  recipientId: string;
-  actorId: string;
-  actorName: string;
-  actorPhotoURL: string | null;
   type: NotificationType;
-  recipeId: string | null;
-  recipeTitle: string | null;
-  commentId: string | null;
-  commentText: string | null;
-  read: boolean;
+  recipientId: string;
+  senderId: string;
+  senderName: string;
+  senderPhotoURL: string | null;
+  recipeId?: string | null;
+  commentText?: string | null;
   createdAt: Date | null;
-};
+  isRead: boolean;
+}
+
+export type GlobalChefNotification = Notification;
+

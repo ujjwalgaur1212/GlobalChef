@@ -1,7 +1,9 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { ArrowLeft, Bookmark, Heart, Share2 } from "lucide-react-native";
+import { ArrowLeft, Bookmark, Share2 } from "lucide-react-native";
 import { useEffect, useRef, type ReactNode } from "react";
 import { ActivityIndicator, Animated, ImageBackground, Pressable, Text, View } from "react-native";
+
+import { LikeButton } from "@/components/LikeButton";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { colors } from "@/constants/theme";
@@ -106,13 +108,15 @@ export function RecipeHeader({
                 />
               )}
             </HeaderActionButton>
-            <HeaderActionButton disabled={!!isLiking} isPrimary onPress={onLike}>
-              {isLiking ? (
-                <ActivityIndicator color={colors.background} size="small" />
-              ) : (
-                <Heart fill={isLiked ? colors.background : "transparent"} stroke={colors.background} size={21} strokeWidth={2.4} />
-              )}
-            </HeaderActionButton>
+            <LikeButton
+              recipeId=""
+              isLiked={isLiked}
+              likesCount={0}
+              isLoading={isLiking}
+              onLike={onLike}
+              showCount={false}
+              variant="header"
+            />
           </View>
         </View>
       </SafeAreaView>

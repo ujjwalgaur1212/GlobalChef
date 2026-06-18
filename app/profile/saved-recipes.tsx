@@ -3,6 +3,7 @@ import { ArrowLeft, Bookmark } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { RecipeCard } from "@/components/RecipeCard";
 import { RecipeSkeletonList } from "@/components/RecipeSkeleton";
@@ -14,6 +15,7 @@ import { getRecipesForInteractions } from "@/services/recipeInteractionService";
 import type { Recipe } from "@/types/recipe";
 
 export default function SavedRecipesScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, initializing } = useAuth();
   const {
@@ -103,7 +105,7 @@ export default function SavedRecipesScreen() {
 
     try {
       const didLike = await toggleLikedRecipeById(recipeId);
-      showToast(didLike ? "Recipe liked" : "Recipe unliked", "success");
+      showToast(didLike ? t("recipeDetail.recipeLiked") : t("recipeDetail.recipeUnliked"), "success");
     } catch (likeError) {
       showToast(likeError instanceof Error ? likeError.message : "Could not like this recipe.", "error");
     } finally {
@@ -124,7 +126,7 @@ export default function SavedRecipesScreen() {
 
     try {
       const didSave = await toggleSavedRecipeById(recipeId);
-      showToast(didSave ? "Recipe saved" : "Recipe removed from saved", "success");
+      showToast(didSave ? t("recipeDetail.recipeSaved") : t("recipeDetail.recipeRemovedSaved"), "success");
     } catch (saveError) {
       showToast(saveError instanceof Error ? saveError.message : "Could not update saved recipes.", "error");
     } finally {
@@ -160,10 +162,10 @@ export default function SavedRecipesScreen() {
                   <Bookmark stroke={colors.saffron} size={24} />
                 </View>
                 <Text className="text-center text-chef-lg font-extrabold text-chef-cream">
-                  {error ? "Could not load saved recipes" : "No saved recipes yet"}
+                  {error ? error : t("savedRecipes.emptyTitle")}
                 </Text>
                 <Text className="mt-2 text-center text-chef-sm text-chef-muted">
-                  {error || "Tap the bookmark on any recipe to keep it here."}
+                  {error || t("savedRecipes.emptySubtitle")}
                 </Text>
               </View>
             )
@@ -174,11 +176,11 @@ export default function SavedRecipesScreen() {
                 <Pressable className="h-11 w-11 items-center justify-center rounded-full bg-chef-panel" onPress={() => router.back()}>
                   <ArrowLeft stroke={colors.cream} size={22} strokeWidth={2.4} />
                 </Pressable>
-                <Text className="text-chef-sm font-extrabold uppercase text-chef-saffron">{String(recipes.length)} saved</Text>
+                <Text className="text-chef-sm font-extrabold uppercase text-chef-saffron">{t("profile.recipesCount", { count: recipes.length })}</Text>
               </View>
-              <Text className="mt-5 text-chef-sm font-bold uppercase text-chef-saffron">Profile</Text>
-              <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">Saved recipes</Text>
-              <Text className="mt-2 text-chef-base leading-7 text-chef-muted">Your private GlobalChef cookbook, ready when hunger gets serious.</Text>
+              <Text className="mt-5 text-chef-sm font-bold uppercase text-chef-saffron">{t("tabs.profile")}</Text>
+              <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">{t("savedRecipes.title")}</Text>
+              <Text className="mt-2 text-chef-base leading-7 text-chef-muted">{t("savedRecipes.desc")}</Text>
             </View>
           }
           renderItem={({ item, index }) => (

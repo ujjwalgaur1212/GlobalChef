@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
-import { Bookmark, ChefHat, Folder, Globe2, LogOut, Pencil, Plus, Trash2, UserRound, UsersRound } from "lucide-react-native";
+import { Bookmark, ChefHat, Folder, Globe2, LogOut, Pencil, Plus, Settings, Trash2, UserRound, UsersRound } from "lucide-react-native";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, Image, ImageBackground, Modal, Pressable, ScrollView, Text, View } from "react-native";
 
 import { Button } from "@/components/Button";
@@ -32,6 +33,7 @@ function getInitials(name: string) {
 }
 
 export default function ProfileTab() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { signOut, user } = useAuth();
   const { showToast } = useToast();
@@ -126,22 +128,22 @@ export default function ProfileTab() {
     setIsSavingCollection(true);
 
     try {
-      if (editingCollection) {
-        await updateCollection({
-          collectionId: editingCollection.id,
-          ownerId: user.id,
-          name: collectionName,
-          description: collectionDescription
-        });
-        showToast("Collection updated", "success");
-      } else {
-        await createCollection({
-          ownerId: user.id,
-          name: collectionName,
-          description: collectionDescription
-        });
-        showToast("Collection created", "success");
-      }
+        if (editingCollection) {
+          await updateCollection({
+            collectionId: editingCollection.id,
+            ownerId: user.id,
+            name: collectionName,
+            description: collectionDescription
+          });
+          showToast(t("profile.collectionUpdated"), "success");
+        } else {
+          await createCollection({
+            ownerId: user.id,
+            name: collectionName,
+            description: collectionDescription
+          });
+          showToast(t("profile.collectionCreated"), "success");
+        }
 
       setIsCollectionModalVisible(false);
       await refreshCollections();
@@ -153,10 +155,10 @@ export default function ProfileTab() {
   }
 
   function confirmDeleteCollection(recipeCollection: RecipeCollection) {
-    Alert.alert("Delete collection?", `"${recipeCollection.name}" will be removed from your profile.`, [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("profile.deleteCollectionTitle"), t("profile.deleteCollectionConfirm", { name: recipeCollection.name }), [
+      { text: t("profile.cancelBtn"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("profile.deleteBtn"),
         style: "destructive",
         onPress: async () => {
           if (!user) {
@@ -165,7 +167,7 @@ export default function ProfileTab() {
 
           try {
             await deleteCollection(recipeCollection.id, user.id);
-            showToast("Collection deleted", "success");
+            showToast(t("profile.collectionDeleted"), "success");
             await refreshCollections();
           } catch (collectionError) {
             showToast(getCollectionErrorMessage(collectionError), "error");
@@ -203,7 +205,7 @@ export default function ProfileTab() {
             </View>
           )}
         </View>
-        <Text className="text-chef-xs font-bold uppercase text-chef-saffron">Chef profile</Text>
+        <Text className="text-chef-xs font-bold uppercase text-chef-saffron">{t("profile.headerTitle")}</Text>
         <Text className="mt-3 text-[32px] font-extrabold leading-10 text-chef-cream">{displayName}</Text>
         <Text className="mt-2 text-chef-base text-chef-muted">{String(user?.email ?? "")}</Text>
         {profile?.country ? (
@@ -212,23 +214,23 @@ export default function ProfileTab() {
             <Text className="ml-2 text-chef-sm font-extrabold text-chef-cream">{profile.country}</Text>
           </View>
         ) : null}
-        <Text className="mt-4 text-chef-base leading-7 text-chef-muted">{profile?.bio || "Add a bio so other cooks know your kitchen story."}</Text>
+        <Text className="mt-4 text-chef-base leading-7 text-chef-muted">{profile?.bio || t("profile.bioPlaceholder")}</Text>
 
         <View className="mt-8 flex-row gap-3">
           <View className="flex-1 rounded-chef border border-chef-line bg-chef-panel p-4">
             <UsersRound stroke={colors.saffron} size={21} />
             <Text className="mt-3 text-chef-2xl font-extrabold text-chef-cream">{String(profile?.followersCount ?? 0)}</Text>
-            <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">Followers</Text>
+            <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">{t("profile.followers")}</Text>
           </View>
           <View className="flex-1 rounded-chef border border-chef-line bg-chef-panel p-4">
             <UserRound stroke={colors.saffron} size={21} />
             <Text className="mt-3 text-chef-2xl font-extrabold text-chef-cream">{String(profile?.followingCount ?? 0)}</Text>
-            <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">Following</Text>
+            <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">{t("profile.following")}</Text>
           </View>
           <View className="flex-1 rounded-chef border border-chef-line bg-chef-panel p-4">
             <ChefHat stroke={colors.saffron} size={21} />
             <Text className="mt-3 text-chef-2xl font-extrabold text-chef-cream">{String(profile?.recipeCount ?? 0)}</Text>
-            <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">Recipes</Text>
+            <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">{t("profile.recipes")}</Text>
           </View>
         </View>
 
@@ -236,7 +238,7 @@ export default function ProfileTab() {
           className="mt-6"
           leftIcon={<Pencil stroke={colors.saffron} size={19} style={{ marginRight: 8 }} />}
           onPress={() => router.push("/profile/edit")}
-          title="Edit profile"
+          title={t("profile.editBtn")}
           variant="secondary"
         />
 
@@ -249,7 +251,7 @@ export default function ProfileTab() {
               params: { id: String(user?.id ?? "") }
             })
           }
-          title="View public profile"
+          title={t("profile.viewPublicBtn")}
           variant="secondary"
         />
 
@@ -257,15 +259,23 @@ export default function ProfileTab() {
           className="mt-4"
           leftIcon={<Bookmark stroke={colors.saffron} size={19} style={{ marginRight: 8 }} />}
           onPress={() => router.push("/profile/saved-recipes")}
-          title="Saved recipes"
+          title={t("profile.savedRecipesBtn")}
+          variant="secondary"
+        />
+
+        <Button
+          className="mt-4"
+          leftIcon={<Settings stroke={colors.saffron} size={19} style={{ marginRight: 8 }} />}
+          onPress={() => router.push("/profile/settings")}
+          title={t("profile.settingsBtn")}
           variant="secondary"
         />
 
         <View className="mt-8">
           <View className="mb-4 flex-row items-center justify-between">
             <View>
-              <Text className="text-chef-xs font-extrabold uppercase text-chef-saffron">Collections</Text>
-              <Text className="mt-1 text-chef-xl font-extrabold text-chef-cream">Recipe collections</Text>
+              <Text className="text-chef-xs font-extrabold uppercase text-chef-saffron">{t("profile.collectionsTitle")}</Text>
+              <Text className="mt-1 text-chef-xl font-extrabold text-chef-cream">{t("profile.collectionsSubtitle")}</Text>
             </View>
             <Pressable className="h-11 w-11 items-center justify-center rounded-full bg-chef-saffron" onPress={openCreateCollection}>
               <Plus stroke={colors.background} size={22} strokeWidth={2.5} />
@@ -281,8 +291,8 @@ export default function ProfileTab() {
               <View className="mx-auto mb-4 h-14 w-14 items-center justify-center rounded-full bg-chef-saffron/15">
                 <Folder stroke={colors.saffron} size={24} />
               </View>
-              <Text className="text-center text-chef-lg font-extrabold text-chef-cream">No collections yet</Text>
-              <Text className="mt-2 text-center text-chef-sm text-chef-muted">Group your favorite recipes by mood, menu, or weeknight plan.</Text>
+              <Text className="text-center text-chef-lg font-extrabold text-chef-cream">{t("profile.noCollections")}</Text>
+              <Text className="mt-2 text-center text-chef-sm text-chef-muted">{t("profile.noCollectionsSubtitle")}</Text>
             </View>
           ) : (
             <View className="gap-4">
@@ -328,7 +338,7 @@ export default function ProfileTab() {
                           {recipeCollection.name}
                         </Text>
                         <Text className="mt-1 text-chef-sm font-bold text-chef-muted">
-                          {String(recipeCollection.recipeCount)} {recipeCollection.recipeCount === 1 ? "recipe" : "recipes"}
+                          {t("profile.recipesCount", { count: recipeCollection.recipeCount })}
                         </Text>
                       </View>
                     </View>
@@ -350,7 +360,7 @@ export default function ProfileTab() {
           isLoading={isSigningOut}
           leftIcon={<LogOut stroke={colors.cream} size={19} style={{ marginRight: 8 }} />}
           onPress={handleSignOut}
-          title="Sign out"
+          title={t("profile.signOutBtn")}
           variant="secondary"
         />
         <View className="h-8" />
@@ -360,18 +370,18 @@ export default function ProfileTab() {
         <View className="flex-1 justify-end bg-chef-black/70">
           <View className="rounded-t-[28px] border border-chef-line bg-chef-black px-6 pb-8 pt-5">
             <View className="mb-5 h-1 w-12 self-center rounded-full bg-chef-line" />
-            <Text className="text-chef-xl font-extrabold text-chef-cream">{editingCollection ? "Edit collection" : "Create collection"}</Text>
-            <FormInput className="mt-5" label="Name" onChangeText={setCollectionName} placeholder="Weekend dinners" value={collectionName} />
+            <Text className="text-chef-xl font-extrabold text-chef-cream">{editingCollection ? t("profile.editCollection") : t("profile.createCollection")}</Text>
+            <FormInput className="mt-5" label={t("profile.collectionNameLabel")} onChangeText={setCollectionName} placeholder={t("profile.collectionNamePlaceholder")} value={collectionName} />
             <FormInput
               className="mt-4"
-              label="Description"
+              label={t("profile.collectionDescLabel")}
               multiline
               onChangeText={setCollectionDescription}
-              placeholder="Recipes for slow evenings"
+              placeholder={t("profile.collectionDescPlaceholder")}
               value={collectionDescription}
             />
-            <Button className="mt-6" isLoading={isSavingCollection} onPress={handleSaveCollection} title={editingCollection ? "Save changes" : "Create"} />
-            <Button className="mt-3" onPress={() => setIsCollectionModalVisible(false)} title="Cancel" variant="ghost" />
+            <Button className="mt-6" isLoading={isSavingCollection} onPress={handleSaveCollection} title={editingCollection ? t("profile.saveChangesBtn") : t("profile.createBtn")} />
+            <Button className="mt-3" onPress={() => setIsCollectionModalVisible(false)} title={t("profile.cancelBtn")} variant="ghost" />
           </View>
         </View>
       </Modal>

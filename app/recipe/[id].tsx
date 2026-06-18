@@ -15,6 +15,7 @@ import {
   Utensils
 } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Animated,
@@ -77,9 +78,9 @@ function Section({ children, title }: { children: React.ReactNode; title: string
   );
 }
 
-function formatCommentDate(date: Date | null) {
+function formatCommentDate(date: Date | null, t: (key: string) => string) {
   if (!date) {
-    return "Just now";
+    return t("notifications.justNow");
   }
 
   return date.toLocaleDateString(undefined, {
@@ -88,9 +89,9 @@ function formatCommentDate(date: Date | null) {
   });
 }
 
-function formatRecipeDate(date: Date | null) {
+function formatRecipeDate(date: Date | null, t: (key: string, options?: any) => string) {
   if (!date) {
-    return "Recently";
+    return t("recipeDetail.recently");
   }
 
   return date.toLocaleDateString(undefined, {
@@ -124,14 +125,16 @@ type RatingSectionProps = {
 };
 
 function RatingSection({ averageRating, isLoading, onRate, onRemove, ratingsCount, userRating }: RatingSectionProps) {
+  const { t } = useTranslation();
+
   return (
     <View className="mt-6 rounded-chef border border-chef-line bg-chef-panel p-5">
       <View className="flex-row items-start justify-between">
         <View>
-          <Text className="text-chef-xs font-extrabold uppercase text-chef-saffron">Recipe rating</Text>
+          <Text className="text-chef-xs font-extrabold uppercase text-chef-saffron">{t("recipeDetail.ratingTitle")}</Text>
           <Text className="mt-2 text-chef-2xl font-extrabold text-chef-cream">{formatRating(averageRating)}</Text>
           <Text className="mt-1 text-chef-sm font-semibold text-chef-muted">
-            {String(ratingsCount)} {ratingsCount === 1 ? "rating" : "ratings"}
+            {t("recipeDetail.ratingsCount", { count: ratingsCount })}
           </Text>
         </View>
         {isLoading ? <ActivityIndicator color={colors.saffron} /> : null}
@@ -164,7 +167,7 @@ function RatingSection({ averageRating, isLoading, onRate, onRemove, ratingsCoun
           disabled={!!isLoading}
           onPress={onRemove}
         >
-          <Text className="text-chef-sm font-extrabold text-chef-cream">Remove my rating</Text>
+          <Text className="text-chef-sm font-extrabold text-chef-cream">{t("recipeDetail.removeRating")}</Text>
         </Pressable>
       ) : null}
     </View>
@@ -199,6 +202,7 @@ type CommentCardProps = {
 };
 
 function CommentCard({ comment, currentUserId, isDeleting, isLiked, isLiking, onDelete, onLike }: CommentCardProps) {
+  const { t } = useTranslation();
   const entrance = useRef(new Animated.Value(0)).current;
   const heartScale = useRef(new Animated.Value(1)).current;
   const initials = getInitials(comment.userName || "GlobalChef cook") || "G";
@@ -257,7 +261,7 @@ function CommentCard({ comment, currentUserId, isDeleting, isLiked, isLiking, on
             <Text className="max-w-[62%] text-chef-sm font-extrabold text-chef-cream" numberOfLines={1}>
               {comment.userName || "GlobalChef cook"}
             </Text>
-            <Text className="text-chef-xs font-bold text-chef-muted">{formatCommentDate(comment.createdAt)}</Text>
+            <Text className="text-chef-xs font-bold text-chef-muted">{formatCommentDate(comment.createdAt, t)}</Text>
           </View>
           <Text className="mt-2 text-chef-sm font-semibold leading-5 text-chef-muted">{comment.text}</Text>
           <View className="mt-3 flex-row items-center gap-3">
@@ -285,10 +289,10 @@ function CommentCard({ comment, currentUserId, isDeleting, isLiked, isLiking, on
                 onPress={() => onDelete(comment)}
               >
                 {isDeleting ? <ActivityIndicator color={colors.tomato} size="small" /> : <Trash2 stroke={colors.tomato} size={14} />}
-                <Text className="ml-2 text-chef-xs font-extrabold text-chef-tomato">Delete</Text>
+                <Text className="ml-2 text-chef-xs font-extrabold text-chef-tomato">{t("recipeDetail.deleteComment")}</Text>
               </Pressable>
             ) : null}
-            {comment.isOptimistic ? <Text className="text-chef-xs font-bold text-chef-muted">Sending...</Text> : null}
+            {comment.isOptimistic ? <Text className="text-chef-xs font-bold text-chef-muted">{t("recipeDetail.sendingComment")}</Text> : null}
           </View>
         </View>
       </View>
@@ -297,7 +301,7 @@ function CommentCard({ comment, currentUserId, isDeleting, isLiked, isLiking, on
 }
 
 export default function RecipeDetailScreen() {
-  const { id } = useLocalSearchParams<{ id?: string | string[] }>();
+  const { id, scrollToComments } = useLocalSearchParams<{ id?: string | string[]; scrollToComments?: string }>();
   const recipeId = String((Array.isArray(id) ? id[0] : id) ?? "");
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -330,12 +334,14 @@ export default function RecipeDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const entrance = useRef(new Animated.Value(0)).current;
   const commentInputScale = useRef(new Animated.Value(1)).current;
+  const scrollViewRef = useRef<ScrollView>(null);
 
+  const { t } = useTranslation();
   const cleanRecipeId = useMemo(() => recipeId?.trim() ?? "", [recipeId]);
   const commentIds = useMemo(() => comments.filter((comment) => !comment.isOptimistic).map((comment) => comment.commentId), [comments]);
   const chefName = chefProfile?.displayName || recipe?.authorName || "GlobalChef cook";
   const chefInitials = getInitials(chefName) || "GC";
-  const createdDateLabel = useMemo(() => formatRecipeDate(recipe?.createdAt ?? null), [recipe?.createdAt]);
+  const createdDateLabel = useMemo(() => formatRecipeDate(recipe?.createdAt ?? null, t), [recipe?.createdAt, t]);
 
   useEffect(() => {
     Animated.timing(entrance, {
@@ -347,7 +353,7 @@ export default function RecipeDetailScreen() {
 
   useEffect(() => {
     if (!cleanRecipeId) {
-      setError("Recipe not found.");
+      setError("recipeDetail.recipeNotFound");
       setIsRecipeLoading(false);
       return;
     }
@@ -357,7 +363,7 @@ export default function RecipeDetailScreen() {
       cleanRecipeId,
       (nextRecipe) => {
         setRecipe(nextRecipe);
-        setError(nextRecipe ? null : "Recipe not found.");
+        setError(nextRecipe ? null : "recipeDetail.recipeNotFound");
         setIsRecipeLoading(false);
       },
       (recipeError) => {
@@ -431,6 +437,15 @@ export default function RecipeDetailScreen() {
 
     return subscribeToUserLikedComments(cleanRecipeId, user.id, commentIds, setLikedCommentIds);
   }, [cleanRecipeId, commentIds, user]);
+
+  useEffect(() => {
+    if (scrollToComments === "true" && !isRecipeLoading && !areCommentsLoading) {
+      const timer = setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [scrollToComments, isRecipeLoading, areCommentsLoading]);
 
   useEffect(() => {
     let isMounted = true;
@@ -513,7 +528,7 @@ export default function RecipeDetailScreen() {
 
     try {
       const didLike = await toggleLikedRecipeById(recipe.id);
-      showToast(didLike ? "Recipe liked" : "Recipe unliked", "success");
+      showToast(didLike ? t("recipeDetail.recipeLiked") : t("recipeDetail.recipeUnliked"), "success");
     } catch (likeError) {
       showToast(likeError instanceof Error ? likeError.message : "Could not like this recipe. Try again.", "error");
     } finally {
@@ -530,7 +545,7 @@ export default function RecipeDetailScreen() {
 
     try {
       const didSave = await toggleSavedRecipeById(recipe.id);
-      showToast(didSave ? "Recipe saved" : "Recipe removed from saved", "success");
+      showToast(didSave ? t("recipeDetail.recipeSaved") : t("recipeDetail.recipeRemovedSaved"), "success");
     } catch (saveError) {
       showToast(saveError instanceof Error ? saveError.message : "Could not update saved recipes.", "error");
     } finally {
@@ -555,7 +570,7 @@ export default function RecipeDetailScreen() {
 
     try {
       await rateRecipe(recipe.id, nextRating);
-      showToast(previousRating ? "Rating updated" : "Recipe rated", "success");
+      showToast(previousRating ? t("recipeDetail.ratingUpdated") : t("recipeDetail.recipeRated"), "success");
     } catch (ratingError) {
       setUserRating(previousRating);
       showToast(getRatingErrorMessage(ratingError), "error");
@@ -575,7 +590,7 @@ export default function RecipeDetailScreen() {
 
     try {
       await removeRating(recipe.id);
-      showToast("Rating removed", "success");
+      showToast(t("recipeDetail.ratingRemoved"), "success");
     } catch (ratingError) {
       setUserRating(previousRating);
       showToast(getRatingErrorMessage(ratingError), "error");
@@ -600,7 +615,7 @@ export default function RecipeDetailScreen() {
 
   async function handleCreateCollectionInSheet() {
     if (!user || !recipe || !newCollectionName.trim()) {
-      showToast("Name the collection first.", "error");
+      showToast(t("profile.collectionNameRequired"), "error");
       return;
     }
 
@@ -619,7 +634,7 @@ export default function RecipeDetailScreen() {
       setInitialCollectionIds(selectedIds);
       setSelectedCollectionIds(new Set(selectedIds));
       setNewCollectionName("");
-      showToast("Collection created", "success");
+      showToast(t("profile.collectionCreated"), "success");
     } catch (collectionError) {
       showToast(getCollectionErrorMessage(collectionError), "error");
     } finally {
@@ -645,7 +660,7 @@ export default function RecipeDetailScreen() {
 
       setInitialCollectionIds(new Set(selectedCollectionIds));
       setIsCollectionSheetVisible(false);
-      showToast("Collections updated", "success");
+      showToast(t("profile.collectionUpdated"), "success");
     } catch (collectionError) {
       showToast(getCollectionErrorMessage(collectionError), "error");
     } finally {
@@ -660,11 +675,15 @@ export default function RecipeDetailScreen() {
 
     try {
       await Share.share({
-        message: `Try "${recipe.title || "this GlobalChef recipe"}" on GlobalChef. ${recipe.cuisine || "Cuisine"} from ${recipe.country || "around the world"}.`,
-        title: recipe.title || "GlobalChef recipe"
+        message: t("recipeDetail.shareMessage", {
+          title: recipe.title || t("recipeDetail.shareTitle"),
+          cuisine: recipe.cuisine || t("recipeDetail.chefsChoice"),
+          country: recipe.country || t("recipeDetail.global")
+        }),
+        title: recipe.title || t("recipeDetail.shareTitle")
       });
     } catch {
-      showToast("Could not open sharing right now.", "error");
+      showToast(t("recipeDetail.shareError"), "error");
     }
   }
 
@@ -675,7 +694,7 @@ export default function RecipeDetailScreen() {
 
     const body = commentBody.trim();
     if (!body) {
-      showToast("Write a comment first.", "error");
+      showToast(t("recipeDetail.commentWriteFirst"), "error");
       return;
     }
 
@@ -687,7 +706,7 @@ export default function RecipeDetailScreen() {
     try {
       await addRecipeComment(cleanRecipeId, body, user);
       setComments((currentComments) => currentComments.filter((comment) => comment.id !== optimisticComment.id));
-      showToast("Comment added", "success");
+      showToast(t("recipeDetail.commentAdded"), "success");
     } catch (commentError) {
       setComments((currentComments) => currentComments.filter((comment) => comment.id !== optimisticComment.id));
       setCommentBody(body);
@@ -704,7 +723,7 @@ export default function RecipeDetailScreen() {
 
     try {
       const result = await toggleFollow();
-      showToast(result.isFollowing ? "Chef followed" : "Chef unfollowed", result.didChange ? "success" : "info");
+      showToast(result.isFollowing ? t("chefProfile.chefFollowed") : t("chefProfile.chefUnfollowed"), result.didChange ? "success" : "info");
     } catch (followError) {
       showToast(followError instanceof Error ? followError.message : "Could not update follow state.", "error");
     }
@@ -723,7 +742,7 @@ export default function RecipeDetailScreen() {
       if (!comment.isOptimistic) {
         await deleteRecipeComment(cleanRecipeId, comment.commentId, user.id);
       }
-      showToast("Comment deleted", "success");
+      showToast(t("recipeDetail.commentDeleted"), "success");
     } catch (deleteError) {
       setComments(previousComments);
       showToast(deleteError instanceof Error ? deleteError.message : "Could not delete comment.", "error");
@@ -754,7 +773,7 @@ export default function RecipeDetailScreen() {
     try {
       const didLike = await likeRecipeComment(cleanRecipeId, comment.commentId, user.id);
       if (!didLike) {
-        showToast("You already liked this comment", "info");
+        showToast(t("recipeDetail.alreadyLikedComment"), "info");
       }
     } catch (likeError) {
       setLikedCommentIds((current) => {
@@ -804,8 +823,10 @@ export default function RecipeDetailScreen() {
             <ArrowLeft stroke={colors.cream} size={22} />
           </Pressable>
           <View className="flex-1 items-center justify-center">
-            <Text className="text-center text-chef-xl font-extrabold text-chef-cream">{error || "Recipe not found."}</Text>
-            <Text className="mt-2 text-center text-chef-sm text-chef-muted">Return to the feed and pick another dish.</Text>
+            <Text className="text-center text-chef-xl font-extrabold text-chef-cream">
+              {error ? (error.startsWith("recipeDetail.") ? t(error) : error) : t("recipeDetail.recipeNotFound")}
+            </Text>
+            <Text className="mt-2 text-center text-chef-sm text-chef-muted">{t("recipeDetail.returnToFeed")}</Text>
           </View>
         </SafeAreaView>
       </View>
@@ -815,6 +836,7 @@ export default function RecipeDetailScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 bg-chef-black">
       <ScrollView
+        ref={scrollViewRef}
         contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) + 28 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -859,15 +881,26 @@ export default function RecipeDetailScreen() {
             />
 
             <View className="flex-row gap-3">
-              <RecipeMetaCard icon={<Heart stroke={colors.saffron} size={20} />} label="Likes" value={`${Number(recipe.likesCount ?? recipe.likes) || 0}`} />
-              <RecipeMetaCard icon={<MessageCircle stroke={colors.saffron} size={20} />} label="Comments" value={`${Number(recipe.commentsCount) || comments.length}`} />
-              <RecipeMetaCard icon={<Bookmark stroke={colors.saffron} size={20} />} label="Saves" value={`${Number(recipe.savesCount) || 0}`} />
+              <RecipeMetaCard
+                icon={
+                  isLiking ? (
+                    <ActivityIndicator color={colors.saffron} size="small" />
+                  ) : (
+                    <Heart fill={likedRecipeIds.has(recipe.id) ? colors.saffron : "transparent"} stroke={colors.saffron} size={20} />
+                  )
+                }
+                label={t("recipeDetail.likes")}
+                value={`${Number(recipe.likesCount ?? recipe.likes) || 0}`}
+                onPress={handleLike}
+              />
+              <RecipeMetaCard icon={<MessageCircle stroke={colors.saffron} size={20} />} label={t("recipeDetail.comments")} value={`${Number(recipe.commentsCount) || comments.length}`} />
+              <RecipeMetaCard icon={<Bookmark stroke={colors.saffron} size={20} />} label={t("recipeDetail.saves")} value={`${Number(recipe.savesCount) || 0}`} />
             </View>
 
             <View className="mt-3 flex-row gap-3">
-              <RecipeMetaCard icon={<Globe2 stroke={colors.saffron} size={20} />} label="Country" value={String(recipe.country || "Global")} />
-              <RecipeMetaCard icon={<Utensils stroke={colors.saffron} size={20} />} label="Cuisine" value={String(recipe.cuisine || "Chef's choice")} />
-              <RecipeMetaCard icon={<CalendarDays stroke={colors.saffron} size={20} />} label="Published" value={createdDateLabel} />
+              <RecipeMetaCard icon={<Globe2 stroke={colors.saffron} size={20} />} label={t("recipeDetail.country")} value={String(recipe.country || t("recipeDetail.global"))} />
+              <RecipeMetaCard icon={<Utensils stroke={colors.saffron} size={20} />} label={t("recipeDetail.cuisine")} value={String(recipe.cuisine || t("recipeDetail.chefsChoice"))} />
+              <RecipeMetaCard icon={<CalendarDays stroke={colors.saffron} size={20} />} label={t("recipeDetail.published")} value={createdDateLabel} />
             </View>
 
             <Pressable
@@ -890,7 +923,7 @@ export default function RecipeDetailScreen() {
                   )}
                 </View>
                 <View className="flex-1">
-                  <Text className="text-chef-xs font-extrabold uppercase text-chef-saffron">Chef profile</Text>
+                  <Text className="text-chef-xs font-extrabold uppercase text-chef-saffron">{t("recipeDetail.chefProfile")}</Text>
                   <Text className="mt-1 text-chef-lg font-extrabold text-chef-cream" numberOfLines={1}>
                     {chefName}
                   </Text>
@@ -903,7 +936,7 @@ export default function RecipeDetailScreen() {
               {chefProfile?.bio ? <Text className="mt-4 text-chef-sm leading-6 text-chef-muted">{chefProfile.bio}</Text> : null}
               <View className="mt-5 flex-row gap-3">
                 <View className="h-12 flex-1 items-center justify-center rounded-chef border border-chef-line bg-chef-black">
-                  <Text className="text-chef-sm font-extrabold text-chef-cream">View chef</Text>
+                  <Text className="text-chef-sm font-extrabold text-chef-cream">{t("recipeDetail.viewChef")}</Text>
                 </View>
                 {recipe.authorId && recipe.authorId !== user.id ? (
                   <Pressable
@@ -920,7 +953,7 @@ export default function RecipeDetailScreen() {
                       <ActivityIndicator color={isFollowing ? colors.saffron : colors.background} size="small" />
                     ) : (
                       <Text className={`text-chef-sm font-extrabold ${isFollowing ? "text-chef-cream" : "text-chef-black"}`}>
-                        {isFollowing ? "Following" : "Follow chef"}
+                        {isFollowing ? t("search.following") : t("recipeDetail.followChef")}
                       </Text>
                     )}
                   </Pressable>
@@ -930,7 +963,7 @@ export default function RecipeDetailScreen() {
 
             {recipe.description ? (
               <View className="mt-8 rounded-chef border border-chef-line bg-chef-panel p-5">
-                <Text className="text-chef-sm font-extrabold uppercase text-chef-saffron">Chef notes</Text>
+                <Text className="text-chef-sm font-extrabold uppercase text-chef-saffron">{t("recipeDetail.chefNotes")}</Text>
                 <Text className="mt-3 text-chef-base font-semibold leading-7 text-chef-cream">{String(recipe.description ?? "")}</Text>
               </View>
             ) : null}
@@ -944,8 +977,8 @@ export default function RecipeDetailScreen() {
                   <FolderPlus stroke={colors.saffron} size={22} />
                 </View>
                 <View>
-                  <Text className="text-chef-base font-extrabold text-chef-cream">Save to collection</Text>
-                  <Text className="mt-1 text-chef-sm font-semibold text-chef-muted">Organize this recipe into one or more lists.</Text>
+                  <Text className="text-chef-base font-extrabold text-chef-cream">{t("recipeDetail.saveToCollection")}</Text>
+                  <Text className="mt-1 text-chef-sm font-semibold text-chef-muted">{t("recipeDetail.organizeIntoLists")}</Text>
                 </View>
               </View>
               <Plus stroke={colors.saffron} size={20} />
@@ -961,15 +994,15 @@ export default function RecipeDetailScreen() {
               </View>
             ) : null}
 
-            <Section title="Ingredients">
+            <Section title={t("recipeDetail.ingredients")}>
               <IngredientList ingredients={recipe.ingredients} />
             </Section>
 
-            <Section title="Cooking steps">
+            <Section title={t("recipeDetail.cookingSteps")}>
               <StepList steps={recipe.steps} />
             </Section>
 
-            <Section title="Comments">
+            <Section title={t("recipeDetail.comments")}>
               <View className="rounded-chef border border-chef-line bg-chef-panel p-4">
                 <Animated.View style={{ transform: [{ scale: commentInputScale }] }}>
                   <View className="flex-row items-center rounded-chef border border-chef-line bg-chef-black px-4">
@@ -980,7 +1013,7 @@ export default function RecipeDetailScreen() {
                       onBlur={() => animateCommentInput(1)}
                       onChangeText={setCommentBody}
                       onFocus={() => animateCommentInput(1.02)}
-                      placeholder="Add a thoughtful note"
+                      placeholder={t("recipeDetail.kitchenNotePlaceholder")}
                       placeholderTextColor={colors.textMuted}
                       value={commentBody}
                     />
@@ -1007,8 +1040,8 @@ export default function RecipeDetailScreen() {
                     <View className="mb-3 h-12 w-12 items-center justify-center rounded-full bg-chef-saffron/15">
                       <Utensils stroke={colors.saffron} size={22} />
                     </View>
-                    <Text className="text-center text-chef-base font-extrabold text-chef-cream">No comments yet</Text>
-                    <Text className="mt-1 text-center text-chef-sm text-chef-muted">Be the first to leave a kitchen note.</Text>
+                    <Text className="text-center text-chef-base font-extrabold text-chef-cream">{t("recipeDetail.noComments")}</Text>
+                    <Text className="mt-1 text-center text-chef-sm text-chef-muted">{t("recipeDetail.noCommentsSubtitle")}</Text>
                   </View>
                 ) : (
                   <View className="mt-5">
@@ -1040,14 +1073,14 @@ export default function RecipeDetailScreen() {
         <View className="flex-1 justify-end bg-chef-black/70">
           <View className="max-h-[82%] rounded-t-[28px] border border-chef-line bg-chef-black px-6 pb-8 pt-5">
             <View className="mb-5 h-1 w-12 self-center rounded-full bg-chef-line" />
-            <Text className="text-chef-xl font-extrabold text-chef-cream">Save to collection</Text>
+            <Text className="text-chef-xl font-extrabold text-chef-cream">{t("recipeDetail.saveToCollection")}</Text>
             <Text className="mt-2 text-chef-sm font-semibold text-chef-muted" numberOfLines={2}>
               {recipe.title}
             </Text>
 
             <View className="mt-5 flex-row items-end gap-3">
               <View className="flex-1">
-                <FormInput label="New collection" onChangeText={setNewCollectionName} placeholder="Dinner ideas" value={newCollectionName} />
+                <FormInput label={t("profile.newCollectionLabel")} onChangeText={setNewCollectionName} placeholder={t("profile.collectionNamePlaceholder")} value={newCollectionName} />
               </View>
               <Pressable
                 className="mb-0 h-14 w-14 items-center justify-center rounded-chef bg-chef-saffron"
@@ -1069,8 +1102,8 @@ export default function RecipeDetailScreen() {
                 </View>
               ) : collections.length === 0 ? (
                 <View className="rounded-chef border border-chef-line bg-chef-panel px-5 py-8">
-                  <Text className="text-center text-chef-base font-extrabold text-chef-cream">No collections yet</Text>
-                  <Text className="mt-2 text-center text-chef-sm text-chef-muted">Create one above and this recipe will be added right away.</Text>
+                  <Text className="text-center text-chef-base font-extrabold text-chef-cream">{t("profile.noCollections")}</Text>
+                  <Text className="mt-2 text-center text-chef-sm text-chef-muted">{t("profile.noCollectionsSheetSubtitle")}</Text>
                 </View>
               ) : (
                 <View className="gap-3">
@@ -1097,7 +1130,7 @@ export default function RecipeDetailScreen() {
                             {recipeCollection.name}
                           </Text>
                           <Text className="mt-1 text-chef-xs font-bold uppercase text-chef-muted">
-                            {String(recipeCollection.recipeCount)} {recipeCollection.recipeCount === 1 ? "recipe" : "recipes"}
+                            {t("profile.recipesCount", { count: recipeCollection.recipeCount })}
                           </Text>
                         </View>
                       </Pressable>
@@ -1107,8 +1140,8 @@ export default function RecipeDetailScreen() {
               )}
             </ScrollView>
 
-            <Button className="mt-5" isLoading={isUpdatingCollections} onPress={handleApplyCollectionChanges} title="Save selections" />
-            <Button className="mt-3" onPress={() => setIsCollectionSheetVisible(false)} title="Cancel" variant="ghost" />
+            <Button className="mt-5" isLoading={isUpdatingCollections} onPress={handleApplyCollectionChanges} title={t("recipeDetail.savedSelections")} />
+            <Button className="mt-3" onPress={() => setIsCollectionSheetVisible(false)} title={t("profile.cancelBtn")} variant="ghost" />
           </View>
         </View>
       </Modal>

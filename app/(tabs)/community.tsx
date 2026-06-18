@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { Activity, ChefHat, Clock3, Heart, MessageCircle, Sparkles, UserPlus, UsersRound } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Animated, Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -56,6 +57,7 @@ function SectionTitle({ kicker, title }: { kicker?: string; title: string }) {
 }
 
 function ChefCard({ chef, currentUserId, onOpenChef }: ChefCardProps) {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { isFollowing, isLoading, toggleFollow } = useFollow(currentUserId, chef.id);
   const scale = useRef(new Animated.Value(1)).current;
@@ -85,7 +87,7 @@ function ChefCard({ chef, currentUserId, onOpenChef }: ChefCardProps) {
   }
 
   return (
-    <Animated.View className="mr-4 w-64" style={{ transform: [{ scale }] }}>
+    <Animated.View className="mr-4 w-72" style={{ transform: [{ scale }] }}>
       <Pressable onPress={() => onOpenChef(chef.id)} onPressIn={() => animate(0.98)} onPressOut={() => animate(1)}>
         <View className="rounded-chef border border-chef-line bg-chef-panel p-5">
           <View className="flex-row items-start justify-between">
@@ -99,7 +101,7 @@ function ChefCard({ chef, currentUserId, onOpenChef }: ChefCardProps) {
               )}
             </View>
             <View className="rounded-full bg-chef-black px-3 py-2">
-              <Text className="text-chef-xs font-extrabold text-chef-muted">{String(chef.followersCount)} followers</Text>
+              <Text className="text-chef-xs font-extrabold text-chef-muted">{t("community.chefCard.followersCount", { count: chef.followersCount })}</Text>
             </View>
           </View>
 
@@ -116,13 +118,13 @@ function ChefCard({ chef, currentUserId, onOpenChef }: ChefCardProps) {
           ) : null}
 
           <View className="mt-5 flex-row gap-3">
-            <View className="flex-1 rounded-chef bg-chef-black px-3 py-3">
-              <Text className="text-chef-lg font-extrabold text-chef-cream">{String(chef.followersCount)}</Text>
-              <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">Followers</Text>
+            <View className="flex-1 items-center justify-center rounded-chef bg-chef-black px-2 py-3">
+              <Text numberOfLines={1} className="text-chef-lg font-extrabold text-chef-cream text-center">{String(chef.followersCount)}</Text>
+              <Text numberOfLines={1} className="mt-1 text-chef-xs font-extrabold text-chef-muted text-center">{t("community.chefCard.followers")}</Text>
             </View>
-            <View className="flex-1 rounded-chef bg-chef-black px-3 py-3">
-              <Text className="text-chef-lg font-extrabold text-chef-cream">{String(chef.followingCount)}</Text>
-              <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">Following</Text>
+            <View className="flex-1 items-center justify-center rounded-chef bg-chef-black px-2 py-3">
+              <Text numberOfLines={1} className="text-chef-lg font-extrabold text-chef-cream text-center">{String(chef.followingCount)}</Text>
+              <Text numberOfLines={1} className="mt-1 text-chef-xs font-extrabold text-chef-muted text-center">{t("community.chefCard.following")}</Text>
             </View>
           </View>
 
@@ -143,14 +145,14 @@ function ChefCard({ chef, currentUserId, onOpenChef }: ChefCardProps) {
                 <>
                   <UserPlus stroke={isFollowing ? colors.saffron : colors.background} size={17} />
                   <Text className={`ml-2 text-chef-sm font-extrabold ${isFollowing ? "text-chef-saffron" : "text-chef-black"}`}>
-                    {isFollowing ? "Following" : "Follow"}
+                    {isFollowing ? t("search.following") : t("search.follow")}
                   </Text>
                 </>
               )}
             </Pressable>
           ) : (
             <View className="mt-5 h-12 items-center justify-center rounded-chef border border-chef-line bg-chef-black">
-              <Text className="text-chef-sm font-extrabold text-chef-muted">Your profile</Text>
+              <Text className="text-chef-sm font-extrabold text-chef-muted">{t("community.chefCard.yourProfile")}</Text>
             </View>
           )}
         </View>
@@ -170,6 +172,7 @@ function EmptyPanel({ icon, title, body }: { icon: React.ReactNode; title: strin
 }
 
 export default function CommunityTab() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -291,7 +294,7 @@ export default function CommunityTab() {
 
     try {
       const didLike = await toggleLikedRecipeById(recipeId);
-      showToast(didLike ? "Recipe liked" : "Recipe unliked", "success");
+      showToast(didLike ? t("recipeDetail.recipeLiked") : t("recipeDetail.recipeUnliked"), "success");
     } catch (likeError) {
       showToast(likeError instanceof Error ? likeError.message : "Could not like this recipe.", "error");
     } finally {
@@ -312,7 +315,7 @@ export default function CommunityTab() {
 
     try {
       const didSave = await toggleSavedRecipeById(recipeId);
-      showToast(didSave ? "Recipe saved" : "Recipe removed from saved", "success");
+      showToast(didSave ? t("recipeDetail.recipeSaved") : t("recipeDetail.recipeRemovedSaved"), "success");
     } catch (saveError) {
       showToast(saveError instanceof Error ? saveError.message : "Could not update saved recipes.", "error");
     } finally {
@@ -371,10 +374,10 @@ export default function CommunityTab() {
           <View className="px-6 pb-5 pt-3">
             <View className="flex-row items-start justify-between">
               <View className="flex-1 pr-4">
-                <Text className="text-chef-sm font-bold uppercase text-chef-saffron">Community</Text>
-                <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">Cook with the GlobalChef table.</Text>
+                <Text className="text-chef-sm font-bold uppercase text-chef-saffron">{t("community.headerTitle")}</Text>
+                <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">{t("community.headerSubtitle")}</Text>
                 <Text className="mt-3 text-chef-base leading-7 text-chef-muted">
-                  Follow chefs, track fresh dishes, and catch the recipes people are gathering around.
+                  {t("community.subtitle")}
                 </Text>
               </View>
               <View className="h-12 w-12 items-center justify-center rounded-chef border border-chef-line bg-chef-panel">
@@ -384,25 +387,25 @@ export default function CommunityTab() {
           </View>
 
           <View className="px-6">
-            <SectionTitle kicker="Discover" title="Suggested chefs" />
+            <SectionTitle kicker="Discover" title={t("community.suggestedChefs")} />
             {renderChefSection(
               visibleSuggestedChefs,
-              "No new chefs yet",
-              "As more cooks join GlobalChef, fresh suggestions will appear here."
+              t("community.noChefsTitle"),
+              t("community.noChefsSubtitle")
             )}
           </View>
 
           <View className="mt-8 px-6">
-            <SectionTitle kicker="Rising cooks" title="Trending chefs" />
+            <SectionTitle kicker="Rising cooks" title={t("community.trendingChefs")} />
             {renderChefSection(
               visibleTrendingChefs,
-              "Trending chefs are warming up",
-              "Follower counts will shape this section as the community grows."
+              t("community.trendingWarming"),
+              t("community.trendingFollowerCounts")
             )}
           </View>
 
           <View className="mt-8 px-6">
-            <SectionTitle kicker="Your network" title="Recipes from followed chefs" />
+            <SectionTitle kicker="Your network" title={t("community.networkTitle")} />
             {areRecipesLoading ? (
               <RecipeSkeletonList />
             ) : followedRecipes.length > 0 ? (
@@ -410,14 +413,14 @@ export default function CommunityTab() {
             ) : (
               <EmptyPanel
                 icon={<Sparkles stroke={colors.saffron} size={24} />}
-                title="Follow chefs to fill this shelf"
-                body="Recipes from chefs you follow will land here as soon as they publish something new."
+                title={t("community.networkEmptyTitle")}
+                body={t("community.networkEmptySubtitle")}
               />
             )}
           </View>
 
           <View className="mt-8 px-6">
-            <SectionTitle kicker="Live table" title="Recent community activity" />
+            <SectionTitle kicker="Live table" title={t("community.recentActivity")} />
             {areRecipesLoading ? (
               <View className="rounded-chef border border-chef-line bg-chef-panel p-6">
                 <ActivityIndicator color={colors.saffron} />
@@ -435,7 +438,7 @@ export default function CommunityTab() {
                     </View>
                     <View className="flex-1">
                       <Text className="text-chef-sm font-extrabold text-chef-cream" numberOfLines={1}>
-                        {recipe.authorName || "GlobalChef cook"} shared {recipe.title}
+                        {t("community.sharedRecipe", { chef: recipe.authorName || "GlobalChef cook", title: recipe.title })}
                       </Text>
                       <View className="mt-2 flex-row flex-wrap items-center">
                         <Clock3 stroke={colors.textMuted} size={14} />
@@ -452,8 +455,8 @@ export default function CommunityTab() {
             ) : (
               <EmptyPanel
                 icon={<Activity stroke={colors.saffron} size={24} />}
-                title="No activity yet"
-                body="Uploads, follows, and recipe conversations will start shaping this feed soon."
+                title={t("community.noActivity")}
+                body={t("community.noActivitySubtitle")}
               />
             )}
           </View>

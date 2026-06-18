@@ -1,6 +1,7 @@
 import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Folder } from "lucide-react-native";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FlatList, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -27,13 +28,14 @@ export default function CollectionDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [pendingLikeIds, setPendingLikeIds] = useState<Set<string>>(new Set());
   const [pendingSaveIds, setPendingSaveIds] = useState<Set<string>>(new Set());
+  const { t } = useTranslation();
 
   useEffect(() => {
     let isMounted = true;
     const cleanCollectionId = collectionId.trim();
 
     if (!cleanCollectionId) {
-      setError("Collection not found.");
+      setError("collectionDetail.collectionNotFound");
       setIsLoading(false);
       return () => {
         isMounted = false;
@@ -49,7 +51,7 @@ export default function CollectionDetailScreen() {
 
         setRecipeCollection(nextCollection);
         setRecipes(nextRecipes);
-        setError(nextCollection ? null : "Collection not found.");
+        setError(nextCollection ? null : "collectionDetail.collectionNotFound");
       })
       .catch((collectionError) => {
         if (isMounted) {
@@ -76,7 +78,7 @@ export default function CollectionDetailScreen() {
 
     try {
       const didLike = await toggleLikedRecipeById(recipeId);
-      showToast(didLike ? "Recipe liked" : "Recipe unliked", "success");
+      showToast(didLike ? t("recipeDetail.recipeLiked") : t("recipeDetail.recipeUnliked"), "success");
     } catch (likeError) {
       showToast(likeError instanceof Error ? likeError.message : "Could not like this recipe.", "error");
     } finally {
@@ -97,7 +99,7 @@ export default function CollectionDetailScreen() {
 
     try {
       const didSave = await toggleSavedRecipeById(recipeId);
-      showToast(didSave ? "Recipe saved" : "Recipe removed from saved", "success");
+      showToast(didSave ? t("recipeDetail.recipeSaved") : t("recipeDetail.recipeRemovedSaved"), "success");
     } catch (saveError) {
       showToast(saveError instanceof Error ? saveError.message : "Could not update saved recipes.", "error");
     } finally {
@@ -130,10 +132,10 @@ export default function CollectionDetailScreen() {
                 <Folder stroke={colors.saffron} size={24} />
               </View>
               <Text className="text-center text-chef-lg font-extrabold text-chef-cream">
-                {error ? "Could not load collection" : "No recipes yet"}
+                {error ? t("collectionDetail.couldNotLoad") : t("collectionDetail.emptyTitle")}
               </Text>
               <Text className="mt-2 text-center text-chef-sm text-chef-muted">
-                {error || "Save recipes into this collection from any recipe detail page."}
+                {error ? (error.startsWith("collectionDetail.") ? t(error) : error) : t("collectionDetail.emptySubtitle", { name: recipeCollection?.name || t("collectionDetail.fallbackName") })}
               </Text>
             </View>
           }
@@ -144,12 +146,12 @@ export default function CollectionDetailScreen() {
                   <ArrowLeft stroke={colors.cream} size={22} strokeWidth={2.4} />
                 </Pressable>
                 <Text className="text-chef-sm font-extrabold uppercase text-chef-saffron">
-                  {String(recipeCollection?.recipeCount ?? recipes.length)} recipes
+                  {t("profile.recipesCount", { count: recipeCollection?.recipeCount ?? recipes.length })}
                 </Text>
               </View>
-              <Text className="mt-5 text-chef-sm font-bold uppercase text-chef-saffron">Collection</Text>
+              <Text className="mt-5 text-chef-sm font-bold uppercase text-chef-saffron">{t("collectionDetail.collectionTitle")}</Text>
               <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">
-                {recipeCollection?.name || "Recipe collection"}
+                {recipeCollection?.name || t("collectionDetail.fallbackName")}
               </Text>
               {recipeCollection?.description ? (
                 <Text className="mt-2 text-chef-base leading-7 text-chef-muted">{recipeCollection.description}</Text>

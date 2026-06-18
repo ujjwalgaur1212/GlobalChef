@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { LikeService } from "@/services/likeService";
 import {
   getInteractionErrorMessage,
-  likeRecipeOnce,
   removeSavedRecipe,
   saveRecipe,
-  subscribeToUserRecipeLikes,
-  subscribeToUserSavedRecipes,
-  unlikeRecipe
+  subscribeToUserSavedRecipes
 } from "@/services/recipeInteractionService";
 import type { RecipeInteraction } from "@/types/recipeInteraction";
 
@@ -43,7 +41,7 @@ export function useRecipeInteractions(userId?: string) {
 
     setIsLoading(true);
 
-    const unsubscribeLikes = subscribeToUserRecipeLikes(
+    const unsubscribeLikes = LikeService.subscribeToUserLikes(
       userId,
       (nextLikes) => {
         if (!didSubscribe) {
@@ -101,7 +99,7 @@ export function useRecipeInteractions(userId?: string) {
         throw new Error("Sign in before liking recipes.");
       }
 
-      return likeRecipeOnce(recipeId, userId);
+      return LikeService.likeRecipe(recipeId, userId);
     },
     [userId]
   );
@@ -112,7 +110,7 @@ export function useRecipeInteractions(userId?: string) {
         throw new Error("Sign in before updating liked recipes.");
       }
 
-      return unlikeRecipe(recipeId, userId);
+      return LikeService.unlikeRecipe(recipeId, userId);
     },
     [userId]
   );

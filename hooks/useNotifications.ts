@@ -39,7 +39,7 @@ export function useNotifications(userId?: string) {
     return unsubscribe;
   }, [userId]);
 
-  const unreadCount = useMemo(() => notifications.filter((notification) => !notification.read).length, [notifications]);
+  const unreadCount = useMemo(() => notifications.filter((notification) => !notification.isRead).length, [notifications]);
 
   const markAsRead = useCallback(async (notificationId: string) => {
     await markNotificationAsRead(notificationId);

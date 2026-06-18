@@ -1,8 +1,9 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Bookmark, Heart, MessageCircle, Utensils } from "lucide-react-native";
+import { Bookmark, MessageCircle, Utensils } from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import { ActivityIndicator, Animated, ImageBackground, Pressable, Text, View } from "react-native";
 
+import { LikeButton } from "@/components/LikeButton";
 import { colors } from "@/constants/theme";
 import type { Recipe } from "@/types/recipe";
 
@@ -45,7 +46,6 @@ export function RecipeCard({
   const saved = !!isSaved;
   const entrance = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(1)).current;
-  const heartScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.timing(entrance, {
@@ -65,22 +65,6 @@ export function RecipeCard({
     }).start();
   }
 
-  function animateHeart() {
-    Animated.sequence([
-      Animated.spring(heartScale, {
-        toValue: 1.18,
-        useNativeDriver: true,
-        speed: 32,
-        bounciness: 8
-      }),
-      Animated.spring(heartScale, {
-        toValue: 1,
-        useNativeDriver: true,
-        speed: 30,
-        bounciness: 7
-      })
-    ]).start();
-  }
 
   return (
     <Animated.View
@@ -127,24 +111,13 @@ export function RecipeCard({
               <Text className="ml-2 text-chef-sm font-bold text-chef-cream">{String(commentsCount)}</Text>
             </View>
             <View className="flex-row items-center gap-2">
-              <Pressable
-                className="flex-row items-center rounded-full bg-chef-saffron/15 px-3 py-2"
-                disabled={!!likeLoading}
-                onPress={(event) => {
-                  event.stopPropagation();
-                  animateHeart();
-                  onLike?.(recipeId);
-                }}
-              >
-                <Animated.View style={{ transform: [{ scale: heartScale }] }}>
-                  {likeLoading ? (
-                    <ActivityIndicator color={colors.saffron} size="small" />
-                  ) : (
-                    <Heart fill={liked ? colors.saffron : "transparent"} stroke={colors.saffron} size={16} />
-                  )}
-                </Animated.View>
-                <Text className="ml-2 text-chef-sm font-bold text-chef-saffron">{String(likes)}</Text>
-              </Pressable>
+              <LikeButton
+                recipeId={recipeId}
+                isLiked={liked}
+                likesCount={likes}
+                isLoading={likeLoading}
+                onLike={(id) => onLike?.(id)}
+              />
               <Pressable
                 className="h-9 w-9 items-center justify-center rounded-full bg-chef-black/70"
                 disabled={!!saveLoading}

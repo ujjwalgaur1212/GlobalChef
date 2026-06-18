@@ -3,6 +3,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Redirect, useRouter } from "expo-router";
 import { ArrowLeft, Camera, Globe2, UserRound } from "lucide-react-native";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -27,6 +28,7 @@ function getInitials(name: string) {
 }
 
 export default function EditProfileScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user, initializing } = useAuth();
   const { showToast } = useToast();
@@ -93,8 +95,8 @@ export default function EditProfileScreen() {
 
       if (!permission.granted) {
         const message = permission.canAskAgain
-          ? "Allow photo library access to update your chef photo."
-          : "Photo access is disabled. Enable it in iOS Settings to update your chef photo.";
+          ? t("editProfile.photoPermission")
+          : t("editProfile.photoPermissionDisabled");
 
         setErrors((current) => ({ ...current, photo: message }));
         showToast(message, "error");
@@ -115,7 +117,7 @@ export default function EditProfileScreen() {
         setErrors((current) => ({ ...current, photo: undefined }));
       }
     } catch {
-      const message = "Could not open your photo library.";
+      const message = t("editProfile.photoSelectError");
 
       setErrors((current) => ({ ...current, photo: message }));
       showToast(message, "error");
@@ -126,19 +128,19 @@ export default function EditProfileScreen() {
     const nextErrors: ProfileErrors = {};
 
     if (!displayName.trim()) {
-      nextErrors.displayName = "Display name is required.";
+      nextErrors.displayName = t("editProfile.displayNameRequired");
     }
 
     if (displayName.trim().length > 60) {
-      nextErrors.displayName = "Display name must be 60 characters or fewer.";
+      nextErrors.displayName = t("editProfile.displayNameTooLong");
     }
 
     if (bio.trim().length > 220) {
-      nextErrors.bio = "Bio must be 220 characters or fewer.";
+      nextErrors.bio = t("editProfile.bioTooLong");
     }
 
     if (country.trim().length > 56) {
-      nextErrors.country = "Country must be 56 characters or fewer.";
+      nextErrors.country = t("editProfile.countryTooLong");
     }
 
     setErrors(nextErrors);
@@ -151,7 +153,7 @@ export default function EditProfileScreen() {
     }
 
     if (!validateForm()) {
-      showToast("Check the highlighted profile fields.", "error");
+      showToast(t("editProfile.checkFields"), "error");
       return;
     }
 
@@ -166,7 +168,7 @@ export default function EditProfileScreen() {
         country,
         photoUri
       });
-      showToast("Profile updated", "success");
+      showToast(t("editProfile.success"), "success");
       router.back();
     } catch (saveError) {
       const message = saveError instanceof Error ? saveError.message : "Could not update profile.";
@@ -203,12 +205,12 @@ export default function EditProfileScreen() {
                 <Pressable className="h-11 w-11 items-center justify-center rounded-full bg-chef-panel" onPress={() => router.back()}>
                   <ArrowLeft stroke={colors.cream} size={22} strokeWidth={2.4} />
                 </Pressable>
-                <Text className="text-chef-sm font-extrabold uppercase text-chef-saffron">Edit profile</Text>
+                <Text className="text-chef-sm font-extrabold uppercase text-chef-saffron">{t("editProfile.title")}</Text>
               </View>
 
-              <Text className="mt-6 text-[32px] font-extrabold leading-10 text-chef-cream">Tune your chef card.</Text>
+              <Text className="mt-6 text-[32px] font-extrabold leading-10 text-chef-cream">{t("editProfile.headerTitle")}</Text>
               <Text className="mt-3 text-chef-base leading-7 text-chef-muted">
-                Your public profile helps other cooks discover your recipes and follow your kitchen.
+                {t("editProfile.subtitle")}
               </Text>
             </View>
 
@@ -225,13 +227,13 @@ export default function EditProfileScreen() {
                 </View>
                 <View className="mt-4 flex-row items-center rounded-chef bg-chef-saffron px-4 py-3">
                   <Camera stroke={colors.background} size={18} />
-                  <Text className="ml-2 text-chef-sm font-extrabold text-chef-black">Change photo</Text>
+                  <Text className="ml-2 text-chef-sm font-extrabold text-chef-black">{t("editProfile.changePhoto")}</Text>
                 </View>
               </Pressable>
               {isCompressingPhoto ? (
                 <View className="mt-3 flex-row items-center">
                   <ActivityIndicator color={colors.saffron} />
-                  <Text className="ml-3 text-chef-sm font-semibold text-chef-muted">Optimizing photo...</Text>
+                  <Text className="ml-3 text-chef-sm font-semibold text-chef-muted">{t("editProfile.optimizingPhoto")}</Text>
                 </View>
               ) : null}
               {errors.photo ? <Text className="mt-2 text-chef-xs font-medium text-chef-tomato">{errors.photo}</Text> : null}
@@ -240,27 +242,27 @@ export default function EditProfileScreen() {
             <View className="mt-8 gap-5 px-6">
               <FormInput
                 error={errors.displayName}
-                label="Display name"
+                label={t("editProfile.displayNameLabel")}
                 leftIcon={<UserRound stroke={colors.textMuted} size={20} />}
                 onChangeText={setDisplayName}
-                placeholder="Aarav Patel"
+                placeholder={t("editProfile.displayNamePlaceholder")}
                 value={displayName}
               />
               <FormInput
                 error={errors.country}
-                label="Country"
+                label={t("editProfile.countryLabel")}
                 leftIcon={<Globe2 stroke={colors.textMuted} size={20} />}
                 onChangeText={setCountry}
-                placeholder="India"
+                placeholder={t("editProfile.countryPlaceholder")}
                 value={country}
               />
               <FormInput
                 error={errors.bio}
-                label="Bio"
+                label={t("editProfile.bioLabel")}
                 multiline
                 numberOfLines={5}
                 onChangeText={setBio}
-                placeholder="Tell cooks what you love making."
+                placeholder={t("editProfile.bioPlaceholder")}
                 textAlignVertical="top"
                 value={bio}
               />
@@ -275,7 +277,7 @@ export default function EditProfileScreen() {
                 disabled={!!isCompressingPhoto}
                 isLoading={isSaving || isCompressingPhoto}
                 onPress={handleSave}
-                title={isSaving ? "Saving profile" : "Save profile"}
+                title={isSaving ? t("editProfile.savingProfile") : t("editProfile.saveProfile")}
               />
             </View>
           </ScrollView>

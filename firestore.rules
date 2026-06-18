@@ -16,8 +16,20 @@ service cloud.firestore {
           request.resource.data[counterName] is number
           && request.resource.data[counterName] >= 0
           && (
-            request.resource.data[counterName] == resource.data[counterName] + 1
-            || request.resource.data[counterName] == resource.data[counterName] - 1
+            (
+              resource.data.keys().hasAny([counterName])
+              && (
+                request.resource.data[counterName] == resource.data[counterName] + 1
+                || request.resource.data[counterName] == resource.data[counterName] - 1
+              )
+            )
+            || (
+              !resource.data.keys().hasAny([counterName])
+              && (
+                request.resource.data[counterName] == 1
+                || request.resource.data[counterName] == 0
+              )
+            )
           )
         );
     }
@@ -244,15 +256,10 @@ service cloud.firestore {
     }
 
     match /recipeLikes/{likeId} {
-      allow get: if signedIn() && likeId.matches(request.auth.uid + '_.*');
-      allow list: if signedIn() && resource.data.userId == request.auth.uid;
-      allow create: if signedIn()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.recipeId is string
-        && likeId == request.auth.uid + '_' + request.resource.data.recipeId
-        && request.resource.data.keys().hasOnly(['recipeId', 'userId', 'createdAt']);
-      allow update: if false;
-      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow delete: if request.auth != null;
+      allow update: if request.auth != null;
     }
 
     match /savedRecipes/{saveId} {
@@ -317,30 +324,28 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       allow get, list: if signedIn() && resource.data.recipientId == request.auth.uid;
       allow create: if signedIn()
-        && request.resource.data.actorId == request.auth.uid
+        && request.resource.data.senderId == request.auth.uid
         && request.resource.data.recipientId is string
         && request.resource.data.recipientId != request.auth.uid
-        && request.resource.data.actorName is string
-        && request.resource.data.type in ['newFollower', 'recipeComment', 'recipeLike']
-        && request.resource.data.read == false
+        && request.resource.data.senderName is string
+        && request.resource.data.type in ['follow', 'comment', 'like']
+        && request.resource.data.isRead == false
         && request.resource.data.keys().hasOnly([
           'recipientId',
-          'actorId',
-          'actorName',
-          'actorPhotoURL',
+          'senderId',
+          'senderName',
+          'senderPhotoURL',
           'type',
           'recipeId',
-          'recipeTitle',
-          'commentId',
           'commentText',
-          'read',
+          'isRead',
           'createdAt'
         ]);
       allow update: if signedIn()
         && resource.data.recipientId == request.auth.uid
-        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['read'])
-        && request.resource.data.read == true;
-      allow delete: if false;
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['isRead'])
+        && request.resource.data.isRead == true;
+      allow delete: if signedIn() && resource.data.recipientId == request.auth.uid;
     }
   }
 }

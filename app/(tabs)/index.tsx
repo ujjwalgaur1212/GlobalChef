@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 
 import { CategoryChips } from "@/components/CategoryChips";
 import { RecipeCard } from "@/components/RecipeCard";
@@ -12,23 +13,27 @@ import { TrendingRecipeCard } from "@/components/TrendingRecipeCard";
 import { cuisineCategories } from "@/constants/recipes";
 import { colors } from "@/constants/theme";
 import { useAuth } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useRecipeInteractions } from "@/hooks/useRecipeInteractions";
 import { useRecipes } from "@/hooks/useRecipes";
 import { useToast } from "@/hooks/useToast";
 import type { Recipe } from "@/types/recipe";
 
 export default function HomeFeedTab() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const { recipes, isLoading, isRefreshing, error, refresh } = useRecipes(user?.id);
   const { likedRecipeIds, savedRecipeIds, toggleLikedRecipeById, toggleSavedRecipeById } = useRecipeInteractions(user?.id);
   const { showToast } = useToast();
+  const { unreadCount } = useNotifications(user?.id);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [pendingLikeIds, setPendingLikeIds] = useState<Set<string>>(new Set());
   const [pendingSaveIds, setPendingSaveIds] = useState<Set<string>>(new Set());
 
-  const firstName = user?.displayName?.split(" ")[0] || "Chef";
+  const firstName = user?.displayName?.split(" ")[0] || "";
+  const welcomeMsg = firstName ? t("home.welcome", { name: firstName }) : t("home.welcomeDefault");
   const trendingRecipes = useMemo(() => recipes.slice(0, 5), [recipes]);
   const categories = useMemo(() => {
     const uploadedCuisines = recipes.map((recipe) => recipe.cuisine).filter(Boolean);
@@ -64,7 +69,7 @@ export default function HomeFeedTab() {
 
     try {
       const didLike = await toggleLikedRecipeById(recipeId);
-      showToast(didLike ? "Recipe liked" : "Recipe unliked", "success");
+      showToast(didLike ? t("recipeDetail.recipeLiked") : t("recipeDetail.recipeUnliked"), "success");
     } catch (likeError) {
       showToast(likeError instanceof Error ? likeError.message : "Could not like this recipe. Try again.", "error");
     } finally {
@@ -85,7 +90,7 @@ export default function HomeFeedTab() {
 
     try {
       const didSave = await toggleSavedRecipeById(recipeId);
-      showToast(didSave ? "Recipe saved" : "Recipe removed from saved", "success");
+      showToast(didSave ? t("recipeDetail.recipeSaved") : t("recipeDetail.recipeRemovedSaved"), "success");
     } catch (saveError) {
       showToast(saveError instanceof Error ? saveError.message : "Could not update saved recipes.", "error");
     } finally {
@@ -138,10 +143,10 @@ export default function HomeFeedTab() {
             ) : (
               <View className="mx-6 rounded-chef border border-chef-line bg-chef-panel px-5 py-8">
                 <Text className="text-center text-chef-lg font-extrabold text-chef-cream">
-                  {error ? "Could not load recipes" : "No recipes yet"}
+                  {error ? t("home.couldNotLoad") : t("home.noRecipes")}
                 </Text>
                 <Text className="mt-2 text-center text-chef-sm text-chef-muted">
-                  {error || "Upload the first GlobalChef recipe, or pull to refresh after seed data is created."}
+                  {error || t("home.noRecipesSubtitle")}
                 </Text>
               </View>
             )
@@ -153,7 +158,7 @@ export default function HomeFeedTab() {
                   <View className="flex-1 pr-4">
                     <Text className="text-chef-sm font-bold uppercase text-chef-saffron">GlobalChef</Text>
                     <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">
-                      What are we cooking, {firstName}?
+                      {welcomeMsg}
                     </Text>
                   </View>
                   <Pressable
@@ -161,6 +166,26 @@ export default function HomeFeedTab() {
                     onPress={() => router.push("/(tabs)/notifications")}
                   >
                     <Bell stroke={colors.cream} size={21} strokeWidth={2.3} />
+                    {unreadCount > 0 ? (
+                      <View
+                        style={{
+                          position: "absolute",
+                          right: -5,
+                          top: -5,
+                          backgroundColor: colors.tomato,
+                          minWidth: 18,
+                          height: 18,
+                          borderRadius: 9,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          paddingHorizontal: 2
+                        }}
+                      >
+                        <Text className="text-[10px] font-extrabold text-chef-cream text-center leading-4">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </Text>
+                      </View>
+                    ) : null}
                   </Pressable>
                 </View>
               </View>
@@ -180,8 +205,8 @@ export default function HomeFeedTab() {
                 <View className="mb-8">
                   <View className="mb-4 flex-row items-center justify-between px-6">
                     <View>
-                      <Text className="text-chef-xl font-extrabold text-chef-cream">Trending recipes</Text>
-                      <Text className="mt-1 text-chef-sm font-semibold text-chef-muted">Fresh from GlobalChef cooks</Text>
+                      <Text className="text-chef-xl font-extrabold text-chef-cream">{t("home.trendingTitle")}</Text>
+                      <Text className="mt-1 text-chef-sm font-semibold text-chef-muted">{t("home.trendingSubtitle")}</Text>
                     </View>
                     <View className="h-10 w-10 items-center justify-center rounded-full bg-chef-saffron/15">
                       <Sparkles stroke={colors.saffron} size={20} />
@@ -202,8 +227,8 @@ export default function HomeFeedTab() {
 
               <View className="mb-4 flex-row items-end justify-between px-6">
                 <View>
-                  <Text className="text-chef-xl font-extrabold text-chef-cream">Recipe feed</Text>
-                  <Text className="mt-1 text-chef-sm font-semibold text-chef-muted">{String(filteredRecipes.length)} dishes found</Text>
+                  <Text className="text-chef-xl font-extrabold text-chef-cream">{t("home.feedTitle")}</Text>
+                  <Text className="mt-1 text-chef-sm font-semibold text-chef-muted">{t("home.dishesFound", { count: filteredRecipes.length })}</Text>
                 </View>
                 <Text className="text-chef-sm font-extrabold text-chef-saffron">{selectedCategory}</Text>
               </View>

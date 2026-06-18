@@ -2,6 +2,7 @@ import { Link } from "expo-router";
 import { Mail } from "lucide-react-native";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { Pressable, Text, View } from "react-native";
 
 import { AuthScreenShell } from "@/components/AuthScreenShell";
@@ -17,6 +18,7 @@ export default function ForgotPasswordScreen() {
   const { sendPasswordReset } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const { t } = useTranslation();
   const {
     control,
     handleSubmit,
@@ -33,7 +35,7 @@ export default function ForgotPasswordScreen() {
 
     try {
       await sendPasswordReset(values);
-      setSuccessMessage("Password reset email sent. Check your inbox for the next step.");
+      setSuccessMessage(t("auth.forgotPassword.successAlertSent"));
     } catch (error) {
       setFormError(getAuthErrorMessage(error));
     }
@@ -41,15 +43,15 @@ export default function ForgotPasswordScreen() {
 
   return (
     <AuthScreenShell
-      eyebrow="Account recovery"
-      title="Reset your password."
-      subtitle="Enter the email connected to your GlobalChef account and Firebase will send a reset link."
+      eyebrow={t("auth.forgotPassword.recoveryEyebrow")}
+      title={t("auth.forgotPassword.recoveryTitle")}
+      subtitle={t("auth.forgotPassword.recoverySubtitle")}
       footer={
         <View className="flex-row items-center justify-center">
-          <Text className="text-chef-sm text-chef-muted">Remembered it? </Text>
+          <Text className="text-chef-sm text-chef-muted">{t("auth.forgotPassword.rememberText")} </Text>
           <Link href="/(auth)/login" asChild>
             <Pressable>
-              <Text className="text-chef-sm font-bold text-chef-saffron">Back to sign in</Text>
+              <Text className="text-chef-sm font-bold text-chef-saffron">{t("auth.forgotPassword.backToLoginBtn")}</Text>
             </Pressable>
           </Link>
         </View>
@@ -60,10 +62,10 @@ export default function ForgotPasswordScreen() {
           control={control}
           name="email"
           rules={{
-            required: "Email is required.",
+            required: t("auth.validation.emailRequired"),
             pattern: {
               value: EMAIL_REGEX,
-              message: "Enter a valid email address."
+              message: t("auth.validation.emailInvalid")
             }
           }}
           render={({ field: { onBlur, onChange, value } }) => (
@@ -72,11 +74,11 @@ export default function ForgotPasswordScreen() {
               autoComplete="email"
               error={errors.email?.message}
               keyboardType="email-address"
-              label="Email"
+              label={t("auth.login.emailLabel")}
               leftIcon={<Mail stroke={colors.textMuted} size={20} />}
               onBlur={onBlur}
               onChangeText={onChange}
-              placeholder="you@example.com"
+              placeholder={t("auth.validation.emailPlaceholder")}
               textContentType="emailAddress"
               value={value}
             />
@@ -95,7 +97,7 @@ export default function ForgotPasswordScreen() {
           </View>
         ) : null}
 
-        <Button isLoading={isSubmitting} onPress={handleSubmit(onSubmit)} title="Send reset link" />
+        <Button isLoading={isSubmitting} onPress={handleSubmit(onSubmit)} title={t("auth.forgotPassword.sendLinkBtn")} />
       </View>
     </AuthScreenShell>
   );

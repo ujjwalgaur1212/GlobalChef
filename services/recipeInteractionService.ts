@@ -13,7 +13,7 @@ import {
 
 import { auth, db } from "@/firebase/config";
 import { toSafeDate, toSafeNumber, toSafeString } from "@/services/firestoreConverters";
-import { createNotificationInTransaction } from "@/services/notificationService";
+import { createLikeNotification } from "@/services/notificationService";
 import { getRecipe, mapRecipeData } from "@/services/recipeService";
 import type { RecipeInteraction } from "@/types/recipeInteraction";
 import type { Recipe } from "@/types/recipe";
@@ -121,15 +121,14 @@ export async function likeRecipeOnce(recipeId: string, userId: string) {
       likes: increment(1),
       likesCount: increment(1)
     });
-    createNotificationInTransaction(transaction, firestore, {
-      recipientId: recipeData.authorId || recipeData.createdBy,
-      actorId: userId,
-      actorName: auth?.currentUser?.displayName || "GlobalChef cook",
-      actorPhotoURL: auth?.currentUser?.photoURL ?? null,
-      type: "recipeLike",
+    createLikeNotification(
+      userId,
+      auth?.currentUser?.displayName || "GlobalChef cook",
+      auth?.currentUser?.photoURL ?? null,
+      recipeData.authorId || recipeData.createdBy,
       recipeId,
-      recipeTitle: recipeData.title
-    });
+      transaction
+    );
 
     return true;
   });

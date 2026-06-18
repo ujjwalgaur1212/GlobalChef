@@ -10,6 +10,8 @@ import {
   updateDoc,
   where,
   writeBatch,
+  setDoc,
+  deleteDoc,
   type DocumentData,
   type Firestore,
   type QueryDocumentSnapshot,
@@ -18,21 +20,9 @@ import {
 
 import { db } from "@/firebase/config";
 import { toSafeBoolean, toSafeDate, toSafeString } from "@/services/firestoreConverters";
-import type { GlobalChefNotification, NotificationType } from "@/types/notification";
+import type { Notification } from "@/types/notification";
 
 type Unsubscribe = () => void;
-
-type CreateNotificationInput = {
-  recipientId: string;
-  actorId: string;
-  actorName: string;
-  actorPhotoURL?: string | null;
-  type: NotificationType;
-  recipeId?: string | null;
-  recipeTitle?: string | null;
-  commentId?: string | null;
-  commentText?: string | null;
-};
 
 function requireDb() {
   if (!db) {
@@ -46,64 +36,143 @@ function notificationsCollection(firestore: Firestore = requireDb()) {
   return collection(firestore, "notifications");
 }
 
-function mapNotificationDocument(document: QueryDocumentSnapshot<DocumentData>): GlobalChefNotification {
+function mapNotificationDocument(document: QueryDocumentSnapshot<DocumentData>): Notification {
   const data = document.data();
 
   return {
     id: document.id,
     recipientId: toSafeString(data.recipientId),
-    actorId: toSafeString(data.actorId),
-    actorName: toSafeString(data.actorName, "GlobalChef cook"),
-    actorPhotoURL: typeof data.actorPhotoURL === "string" ? data.actorPhotoURL : null,
+    senderId: toSafeString(data.senderId),
+    senderName: toSafeString(data.senderName, "GlobalChef cook"),
+    senderPhotoURL: typeof data.senderPhotoURL === "string" ? data.senderPhotoURL : null,
     type:
-      data.type === "newFollower" || data.type === "recipeComment" || data.type === "recipeLike"
+      data.type === "follow" || data.type === "comment" || data.type === "like"
         ? data.type
-        : "recipeComment",
+        : "comment",
     recipeId: toSafeString(data.recipeId) || null,
-    recipeTitle: toSafeString(data.recipeTitle) || null,
-    commentId: toSafeString(data.commentId) || null,
     commentText: toSafeString(data.commentText) || null,
-    read: toSafeBoolean(data.read),
+    isRead: toSafeBoolean(data.isRead),
     createdAt: toSafeDate(data.createdAt)
   };
 }
 
-export function createNotificationInTransaction(
-  transaction: Transaction,
-  firestore: Firestore,
-  input: CreateNotificationInput
-) {
-  const recipientId = toSafeString(input.recipientId);
-  const actorId = toSafeString(input.actorId);
+export function createFollowNotification(
+  senderId: string,
+  senderName: string,
+  senderPhotoURL: string | null,
+  recipientId: string,
+  transaction?: Transaction
+): Promise<void> | void {
+  const cleanSenderId = toSafeString(senderId);
+  const cleanRecipientId = toSafeString(recipientId);
 
-  if (!recipientId || !actorId || recipientId === actorId) {
+  if (!cleanSenderId || !cleanRecipientId || cleanSenderId === cleanRecipientId) {
     return;
   }
 
+  const firestore = requireDb();
   const notificationRef = doc(notificationsCollection(firestore));
-
-  transaction.set(notificationRef, {
-    recipientId,
-    actorId,
-    actorName: toSafeString(input.actorName, "GlobalChef cook") || "GlobalChef cook",
-    actorPhotoURL: input.actorPhotoURL ?? null,
-    type: input.type,
-    recipeId: input.recipeId ?? null,
-    recipeTitle: input.recipeTitle ?? null,
-    commentId: input.commentId ?? null,
-    commentText: input.commentText ?? null,
-    read: false,
+  const data = {
+    senderId: cleanSenderId,
+    senderName: toSafeString(senderName, "GlobalChef cook") || "GlobalChef cook",
+    senderPhotoURL: senderPhotoURL ?? null,
+    recipientId: cleanRecipientId,
+    type: "follow" as const,
+    isRead: false,
     createdAt: serverTimestamp()
-  });
+  };
+
+  if (transaction) {
+    transaction.set(notificationRef, data);
+  } else {
+    return setDoc(notificationRef, data);
+  }
+}
+
+export function createCommentNotification(
+  senderId: string,
+  senderName: string,
+  senderPhotoURL: string | null,
+  recipientId: string,
+  recipeId: string,
+  commentText: string,
+  transaction?: Transaction
+): Promise<void> | void {
+  const cleanSenderId = toSafeString(senderId);
+  const cleanRecipientId = toSafeString(recipientId);
+
+  if (!cleanSenderId || !cleanRecipientId || cleanSenderId === cleanRecipientId) {
+    return;
+  }
+
+  const firestore = requireDb();
+  const notificationRef = doc(notificationsCollection(firestore));
+  const data = {
+    senderId: cleanSenderId,
+    senderName: toSafeString(senderName, "GlobalChef cook") || "GlobalChef cook",
+    senderPhotoURL: senderPhotoURL ?? null,
+    recipientId: cleanRecipientId,
+    recipeId: toSafeString(recipeId) || null,
+    commentText: toSafeString(commentText) || null,
+    type: "comment" as const,
+    isRead: false,
+    createdAt: serverTimestamp()
+  };
+
+  if (transaction) {
+    transaction.set(notificationRef, data);
+  } else {
+    return setDoc(notificationRef, data);
+  }
+}
+
+export function createLikeNotification(
+  senderId: string,
+  senderName: string,
+  senderPhotoURL: string | null,
+  recipientId: string,
+  recipeId: string,
+  transaction?: Transaction
+): Promise<void> | void {
+  const cleanSenderId = toSafeString(senderId);
+  const cleanRecipientId = toSafeString(recipientId);
+
+  if (!cleanSenderId || !cleanRecipientId || cleanSenderId === cleanRecipientId) {
+    return;
+  }
+
+  const firestore = requireDb();
+  const notificationRef = doc(notificationsCollection(firestore));
+  const data = {
+    senderId: cleanSenderId,
+    senderName: toSafeString(senderName, "GlobalChef cook") || "GlobalChef cook",
+    senderPhotoURL: senderPhotoURL ?? null,
+    recipientId: cleanRecipientId,
+    recipeId: toSafeString(recipeId) || null,
+    type: "like" as const,
+    isRead: false,
+    createdAt: serverTimestamp()
+  };
+
+  if (transaction) {
+    transaction.set(notificationRef, data);
+  } else {
+    return setDoc(notificationRef, data);
+  }
 }
 
 export function subscribeToNotifications(
   userId: string,
-  onNotifications: (notifications: GlobalChefNotification[]) => void,
+  onNotifications: (notifications: Notification[]) => void,
   onError: (error: Error) => void
 ): Unsubscribe {
   return onSnapshot(
-    query(notificationsCollection(), where("recipientId", "==", userId), orderBy("createdAt", "desc"), limit(50)),
+    query(
+      notificationsCollection(),
+      where("recipientId", "==", userId),
+      orderBy("createdAt", "desc"),
+      limit(100)
+    ),
     (snapshot) => {
       onNotifications(snapshot.docs.map(mapNotificationDocument));
     },
@@ -113,13 +182,19 @@ export function subscribeToNotifications(
 
 export async function markNotificationAsRead(notificationId: string) {
   await updateDoc(doc(requireDb(), "notifications", notificationId), {
-    read: true
+    isRead: true
   });
 }
 
 export async function markAllNotificationsAsRead(userId: string) {
   const firestore = requireDb();
-  const snapshot = await getDocs(query(notificationsCollection(firestore), where("recipientId", "==", userId), where("read", "==", false)));
+  const snapshot = await getDocs(
+    query(
+      notificationsCollection(firestore),
+      where("recipientId", "==", userId),
+      where("isRead", "==", false)
+    )
+  );
 
   if (snapshot.empty) {
     return;
@@ -129,11 +204,15 @@ export async function markAllNotificationsAsRead(userId: string) {
 
   snapshot.docs.forEach((notification) => {
     batch.update(notification.ref, {
-      read: true
+      isRead: true
     });
   });
 
   await batch.commit();
+}
+
+export async function deleteNotification(notificationId: string) {
+  await deleteDoc(doc(requireDb(), "notifications", notificationId));
 }
 
 export function getNotificationErrorMessage(error: unknown) {

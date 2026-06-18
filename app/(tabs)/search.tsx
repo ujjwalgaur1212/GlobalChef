@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { ChefHat, Flame, Heart, Search as SearchIcon, Sparkles, Trash2, UserPlus } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, FlatList, Image, ImageBackground, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -247,6 +248,7 @@ function ChefResultCard({ chef, currentUserId, onOpenChef }: ChefResultCardProps
 }
 
 export default function SearchTab() {
+  const { t } = useTranslation();
   const router = useRouter();
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -409,7 +411,7 @@ export default function SearchTab() {
 
     try {
       const didLike = await toggleLikedRecipeById(recipeId);
-      showToast(didLike ? "Recipe liked" : "Recipe unliked", "success");
+      showToast(didLike ? t("recipeDetail.recipeLiked") : t("recipeDetail.recipeUnliked"), "success");
     } catch (likeError) {
       showToast(likeError instanceof Error ? likeError.message : "Could not update this recipe.", "error");
     } finally {
@@ -430,7 +432,7 @@ export default function SearchTab() {
 
     try {
       const didSave = await toggleSavedRecipeById(recipeId);
-      showToast(didSave ? "Recipe saved" : "Recipe removed from saved", "success");
+      showToast(didSave ? t("recipeDetail.recipeSaved") : t("recipeDetail.recipeRemovedSaved"), "success");
     } catch (saveError) {
       showToast(saveError instanceof Error ? saveError.message : "Could not update saved recipes.", "error");
     } finally {
@@ -480,9 +482,9 @@ export default function SearchTab() {
                 <View className="mx-auto mb-4 h-14 w-14 items-center justify-center rounded-full bg-chef-saffron/15">
                   <SearchIcon stroke={colors.saffron} size={24} />
                 </View>
-                <Text className="text-center text-chef-lg font-extrabold text-chef-cream">No results found</Text>
+                <Text className="text-center text-chef-lg font-extrabold text-chef-cream">{t("search.noResults")}</Text>
                 <Text className="mt-2 text-center text-chef-sm leading-6 text-chef-muted">
-                  Try a recipe title, ingredient, cuisine, country, chef name, or username.
+                  {t("search.noResultsSubtitle")}
                 </Text>
               </View>
             ) : null
@@ -497,10 +499,10 @@ export default function SearchTab() {
           ListHeaderComponent={
             <>
               <View className="px-6 pb-5 pt-3">
-                <Text className="text-chef-sm font-bold uppercase text-chef-saffron">Search and discovery</Text>
-                <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">Find dishes and cooks.</Text>
+                <Text className="text-chef-sm font-bold uppercase text-chef-saffron">{t("search.headerTitle")}</Text>
+                <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">{t("search.headerSubtitle")}</Text>
                 <Text className="mt-2 text-chef-base leading-7 text-chef-muted">
-                  Search recipes by title, ingredient, cuisine, or country. Search chefs by name or username.
+                  {t("search.subtitle")}
                 </Text>
               </View>
 
@@ -510,10 +512,10 @@ export default function SearchTab() {
                 {searchHistory.length > 0 ? (
                   <View className="mt-4">
                     <View className="mb-3 flex-row items-center justify-between">
-                      <Text className="text-chef-sm font-extrabold uppercase text-chef-muted">Recent searches</Text>
+                      <Text className="text-chef-sm font-extrabold uppercase text-chef-muted">{t("search.recentSearches")}</Text>
                       <Pressable className="flex-row items-center" onPress={clearHistory}>
                         <Trash2 stroke={colors.tomato} size={14} />
-                        <Text className="ml-1 text-chef-xs font-extrabold text-chef-tomato">Clear</Text>
+                        <Text className="ml-1 text-chef-xs font-extrabold text-chef-tomato">{t("search.clearBtn")}</Text>
                       </Pressable>
                     </View>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -527,12 +529,12 @@ export default function SearchTab() {
                 ) : null}
 
                 <View className="mt-5">
-                  <Text className="mb-3 text-chef-sm font-extrabold uppercase text-chef-muted">Sort recipe results</Text>
+                  <Text className="mb-3 text-chef-sm font-extrabold uppercase text-chef-muted">{t("search.sortResults")}</Text>
                   <View className="flex-row gap-2">
                     {[
-                      { label: "Newest", value: "newest" },
-                      { label: "Most liked", value: "mostLiked" },
-                      { label: "Discussed", value: "mostCommented" }
+                      { label: t("search.sortNewest"), value: "newest" },
+                      { label: t("search.sortMostLiked"), value: "mostLiked" },
+                      { label: t("search.sortDiscussed"), value: "mostCommented" }
                     ].map((option) => {
                       const isSelected = option.value === sort;
 
@@ -560,10 +562,10 @@ export default function SearchTab() {
                     </View>
                   ) : (
                     <>
-                      <DiscoveryRail onOpenRecipe={openRecipe} recipes={trendingRecipes} title="Trending Recipes" />
-                      <DiscoveryRail onOpenRecipe={openRecipe} recipes={mostLikedRecipes} title="Most Liked Recipes" />
-                      <DiscoveryRail onOpenRecipe={openRecipe} recipes={newestRecipes} title="Newest Recipes" />
-                      <DiscoveryRail onOpenRecipe={openRecipe} recipes={recommendedRecipes} title="Recommended Recipes" />
+                      <DiscoveryRail onOpenRecipe={openRecipe} recipes={trendingRecipes} title={t("search.trendingRecipes")} />
+                      <DiscoveryRail onOpenRecipe={openRecipe} recipes={mostLikedRecipes} title={t("search.mostLikedRecipes")} />
+                      <DiscoveryRail onOpenRecipe={openRecipe} recipes={newestRecipes} title={t("search.newestRecipes")} />
+                      <DiscoveryRail onOpenRecipe={openRecipe} recipes={recommendedRecipes} title={t("search.recommendedRecipes")} />
                     </>
                   )}
                 </>
@@ -572,7 +574,7 @@ export default function SearchTab() {
               {filteredChefs.length > 0 ? (
                 <View className="mt-7 px-6">
                   <View className="mb-4 flex-row items-center justify-between">
-                    <Text className="text-chef-xl font-extrabold text-chef-cream">Chef results</Text>
+                    <Text className="text-chef-xl font-extrabold text-chef-cream">{t("search.chefResults")}</Text>
                     <ChefHat stroke={colors.saffron} size={20} />
                   </View>
                   <View className="gap-3">
@@ -583,21 +585,21 @@ export default function SearchTab() {
                 </View>
               ) : hasQuery && !isLoading ? (
                 <View className="mx-6 mt-7 rounded-chef border border-chef-line bg-chef-panel px-5 py-6">
-                  <Text className="text-chef-base font-extrabold text-chef-cream">No chef matches</Text>
-                  <Text className="mt-2 text-chef-sm leading-6 text-chef-muted">Try a display name or username.</Text>
+                  <Text className="text-chef-base font-extrabold text-chef-cream">{t("search.noChefMatches")}</Text>
+                  <Text className="mt-2 text-chef-sm leading-6 text-chef-muted">{t("search.noChefMatchesSubtitle")}</Text>
                 </View>
               ) : null}
 
               <View className="mb-4 mt-7 flex-row items-center justify-between px-6">
                 <View>
-                  <Text className="text-chef-xl font-extrabold text-chef-cream">{hasQuery ? "Recipe results" : "Browse recipes"}</Text>
+                  <Text className="text-chef-xl font-extrabold text-chef-cream">{hasQuery ? t("search.recipeResults") : t("search.browseRecipes")}</Text>
                   <Text className="mt-1 text-chef-sm font-semibold text-chef-muted">
-                    {hasQuery ? `${filteredRecipes.length} matching dishes` : "Scroll for more discoveries"}
+                    {hasQuery ? t("search.matchingDishes", { count: filteredRecipes.length }) : t("search.scrollDiscoveries")}
                   </Text>
                 </View>
                 <View className="flex-row items-center rounded-full bg-chef-saffron/15 px-3 py-2">
                   <Flame stroke={colors.saffron} size={15} />
-                  <Text className="ml-1 text-chef-xs font-extrabold text-chef-saffron">{sort === "mostLiked" ? "Liked" : sort === "mostCommented" ? "Trending" : "Fresh"}</Text>
+                  <Text className="ml-1 text-chef-xs font-extrabold text-chef-saffron">{sort === "mostLiked" ? t("search.sortMostLiked") : sort === "mostCommented" ? t("search.sortDiscussed") : t("search.sortNewest")}</Text>
                 </View>
               </View>
             </>
