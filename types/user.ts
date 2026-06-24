@@ -16,7 +16,9 @@ export type UserProfile = {
 export type UpdateUserProfileInput = {
   userId: string;
   displayName: string;
+  username: string;
   bio: string;
   country: string;
   photoUri?: string | null;
 };
+

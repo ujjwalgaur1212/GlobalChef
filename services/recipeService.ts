@@ -39,6 +39,7 @@ type SeedRecipe = Omit<
   | "commentsCount"
   | "averageRating"
   | "ratingsCount"
+  | "sharesCount"
 >;
 
 const seedRecipes: SeedRecipe[] = [
@@ -125,7 +126,7 @@ export function mapRecipeData(documentId: string, data: DocumentData): Recipe {
     tags: toSafeStringArray(data.tags),
     imageUrl: toSafeString(data.imageUrl),
     authorId: toSafeString(data.authorId ?? data.createdBy),
-    authorName: toSafeString(data.authorName, "GlobalChef cook"),
+    authorName: toSafeString(data.authorName, "HiChef cook"),
     createdBy: toSafeString(data.createdBy ?? data.authorId),
     createdAt: toSafeDate(data.createdAt),
     likes: toSafeNumber(data.likesCount ?? data.likes),
@@ -133,7 +134,8 @@ export function mapRecipeData(documentId: string, data: DocumentData): Recipe {
     savesCount: toSafeNumber(data.savesCount),
     commentsCount: toSafeNumber(data.commentsCount),
     averageRating: toSafeNumber(data.averageRating),
-    ratingsCount: toSafeNumber(data.ratingsCount)
+    ratingsCount: toSafeNumber(data.ratingsCount),
+    sharesCount: toSafeNumber(data.sharesCount)
   };
 }
 
@@ -247,14 +249,15 @@ export async function seedRecipesIfEmpty(createdBy: string) {
       ...recipe,
       recipeId: recipeRef.id,
       authorId: createdBy,
-      authorName: "GlobalChef cook",
+      authorName: "HiChef cook",
       createdBy,
       createdAt: serverTimestamp(),
       likesCount: recipe.likes,
       savesCount: 0,
       commentsCount: 0,
       averageRating: 0,
-      ratingsCount: 0
+      ratingsCount: 0,
+      sharesCount: 0
     });
   });
   batch.set(
@@ -314,7 +317,7 @@ export async function createRecipe(input: CreateRecipeInput) {
     tags: toSafeStringArray(input.tags),
     imageUrl,
     authorId,
-    authorName: toSafeString(input.authorName, "GlobalChef cook").trim() || "GlobalChef cook",
+    authorName: toSafeString(input.authorName, "HiChef cook").trim() || "HiChef cook",
     createdBy: authorId,
     createdAt: serverTimestamp(),
     likes: 0,
@@ -322,7 +325,8 @@ export async function createRecipe(input: CreateRecipeInput) {
     savesCount: 0,
     commentsCount: 0,
     averageRating: 0,
-    ratingsCount: 0
+    ratingsCount: 0,
+    sharesCount: 0
   });
   batch.set(
     doc(requireDb(), "users", authorId),
@@ -356,6 +360,12 @@ export async function likeRecipe(recipeId: string) {
   await updateDoc(doc(requireDb(), "recipes", recipeId), {
     likes: increment(1),
     likesCount: increment(1)
+  });
+}
+
+export async function trackRecipeShare(recipeId: string) {
+  await updateDoc(doc(requireDb(), "recipes", recipeId), {
+    sharesCount: increment(1)
   });
 }
 

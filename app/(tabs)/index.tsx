@@ -1,9 +1,10 @@
-import { Bell, Sparkles } from "lucide-react-native";
+import { Bell, Sparkles, Camera } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, Text, View } from "react-native";
+import { FlatList, Pressable, ScrollView, Text, View, Alert, Modal, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
+import * as ImagePicker from "expo-image-picker";
 
 import { CategoryChips } from "@/components/CategoryChips";
 import { RecipeCard } from "@/components/RecipeCard";
@@ -18,6 +19,8 @@ import { useRecipeInteractions } from "@/hooks/useRecipeInteractions";
 import { useRecipes } from "@/hooks/useRecipes";
 import { useToast } from "@/hooks/useToast";
 import type { Recipe } from "@/types/recipe";
+import { scanIngredients } from "@/src/services/ingredientScannerService";
+import { CommentsBottomSheet } from "@/components/CommentsBottomSheet";
 
 export default function HomeFeedTab() {
   const { t } = useTranslation();
@@ -32,6 +35,17 @@ export default function HomeFeedTab() {
   const [pendingLikeIds, setPendingLikeIds] = useState<Set<string>>(new Set());
   const [pendingSaveIds, setPendingSaveIds] = useState<Set<string>>(new Set());
 
+  // Ingredient Scanner MVP States
+  const [isScanning, setIsScanning] = useState(false);
+  const [detectedIngredients, setDetectedIngredients] = useState<string[] | null>(null);
+  const [showDetectedModal, setShowDetectedModal] = useState(false);
+
+  // Premium Social Feed active tab state
+  const [activeTab, setActiveTab] = useState<'forYou' | 'popular' | 'following' | 'trending'>('forYou');
+
+  // Instagram comments bottom sheet state
+  const [commentsRecipe, setCommentsRecipe] = useState<{ id: string; title: string } | null>(null);
+
   const firstName = user?.displayName?.split(" ")[0] || "";
   const welcomeMsg = firstName ? t("home.welcome", { name: firstName }) : t("home.welcomeDefault");
   const trendingRecipes = useMemo(() => recipes.slice(0, 5), [recipes]);
@@ -39,10 +53,10 @@ export default function HomeFeedTab() {
     const uploadedCuisines = recipes.map((recipe) => recipe.cuisine).filter(Boolean);
     return ["All", ...Array.from(new Set([...cuisineCategories.filter((category) => category !== "All"), ...uploadedCuisines]))];
   }, [recipes]);
-  const filteredRecipes = useMemo(() => {
+  const processedRecipes = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
-    return recipes.filter((recipe) => {
+    let list = recipes.filter((recipe) => {
       const matchesCategory = selectedCategory === "All" || recipe.cuisine === selectedCategory;
       const matchesSearch =
         !normalizedQuery ||
@@ -52,13 +66,61 @@ export default function HomeFeedTab() {
 
       return matchesCategory && matchesSearch;
     });
-  }, [recipes, searchQuery, selectedCategory]);
+
+    if (activeTab === "popular") {
+      list = [...list].sort((a, b) => {
+        const aLikes = Number(a.likes) || 0;
+        const bLikes = Number(b.likes) || 0;
+        const aComments = Number(a.commentsCount) || 0;
+        const bComments = Number(b.commentsCount) || 0;
+        return (bLikes + bComments) - (aLikes + aComments);
+      });
+    } else if (activeTab === "following") {
+      list = list.filter((r) => r.authorId !== user?.id);
+    } else if (activeTab === "trending") {
+      list = [...list].sort((a, b) => (Number(b.averageRating) || 0) - (Number(a.averageRating) || 0));
+    }
+
+    return list;
+  }, [recipes, searchQuery, selectedCategory, activeTab, user?.id]);
 
   useEffect(() => {
     if (error) {
       showToast(error, "error");
     }
   }, [error, showToast]);
+
+  async function handleScanIngredients() {
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert(
+          "Permission Required",
+          "Camera permissions are required to scan ingredients. Please enable them in settings."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        quality: 0.85
+      });
+
+      if (!result.canceled && result.assets?.[0]?.uri) {
+        setIsScanning(true);
+        const ingredientsList = await scanIngredients(result.assets[0].uri);
+        setDetectedIngredients(ingredientsList);
+        setShowDetectedModal(true);
+      }
+    } catch (scanError) {
+      console.error("Ingredient Scanner Error:", scanError);
+      Alert.alert("Scanner Error", "Failed to analyze ingredients. Please try again.");
+    } finally {
+      setIsScanning(false);
+    }
+  }
 
   async function handleLike(recipeId: string) {
     if (pendingLikeIds.has(recipeId)) {
@@ -121,6 +183,7 @@ export default function HomeFeedTab() {
           onLike={handleLike}
           onPress={openRecipe}
           onSave={handleSave}
+          onCommentPress={(id, title) => setCommentsRecipe({ id, title })}
           recipe={item}
         />
       </View>
@@ -132,7 +195,7 @@ export default function HomeFeedTab() {
       <SafeAreaView className="flex-1" edges={["top"]}>
         <FlatList
           contentContainerStyle={{ paddingBottom: 112 }}
-          data={filteredRecipes}
+          data={processedRecipes}
           keyExtractor={(item) => item.id}
           keyboardShouldPersistTaps="handled"
           onRefresh={refresh}
@@ -156,7 +219,7 @@ export default function HomeFeedTab() {
               <View className="px-6 pb-5 pt-3">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 pr-4">
-                    <Text className="text-chef-sm font-bold uppercase text-chef-saffron">GlobalChef</Text>
+                    <Text className="text-chef-sm font-bold uppercase text-chef-saffron">HiChef</Text>
                     <Text className="mt-2 text-[32px] font-extrabold leading-10 text-chef-cream">
                       {welcomeMsg}
                     </Text>
@@ -192,6 +255,17 @@ export default function HomeFeedTab() {
 
               <View className="px-6 pb-5">
                 <SearchBar onChangeText={setSearchQuery} value={searchQuery} />
+                
+                <Pressable
+                  onPress={handleScanIngredients}
+                  className="mt-4 flex-row items-center justify-center bg-chef-saffron rounded-chef py-3.5 px-4 active:opacity-90"
+                >
+                  <Camera stroke={colors.background} size={20} strokeWidth={2.5} />
+                  <Text className="text-chef-black font-extrabold text-chef-base ml-2">
+                    Scan Ingredients
+                  </Text>
+                </Pressable>
+
                 <View className="mt-4">
                   <CategoryChips
                     categories={categories}
@@ -201,34 +275,97 @@ export default function HomeFeedTab() {
                 </View>
               </View>
 
-              {trendingRecipes.length > 0 ? (
-                <View className="mb-8">
-                  <View className="mb-4 flex-row items-center justify-between px-6">
-                    <View>
-                      <Text className="text-chef-xl font-extrabold text-chef-cream">{t("home.trendingTitle")}</Text>
-                      <Text className="mt-1 text-chef-sm font-semibold text-chef-muted">{t("home.trendingSubtitle")}</Text>
-                    </View>
-                    <View className="h-10 w-10 items-center justify-center rounded-full bg-chef-saffron/15">
-                      <Sparkles stroke={colors.saffron} size={20} />
-                    </View>
-                  </View>
+              {/* Premium Feed Tab Navigation */}
+              <View className="px-6 mb-6">
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingRight: 16 }}
+                >
+                  <View className="flex-row items-center gap-3">
+                    <Pressable
+                      onPress={() => setActiveTab("forYou")}
+                      className={`rounded-full px-4 py-2.5 border ${
+                        activeTab === "forYou"
+                          ? "bg-chef-saffron border-chef-saffron"
+                          : "bg-chef-panel/40 border-chef-line/60"
+                      }`}
+                    >
+                      <Text
+                        className={`text-chef-sm font-extrabold ${
+                          activeTab === "forYou" ? "text-chef-black" : "text-chef-cream"
+                        }`}
+                      >
+                        For You
+                      </Text>
+                    </Pressable>
 
-                  <ScrollView
-                    contentContainerStyle={{ paddingLeft: 24, paddingRight: 8 }}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                  >
-                    {trendingRecipes.map((recipe) => (
-                      <TrendingRecipeCard key={recipe.id} onPress={openRecipe} recipe={recipe} />
-                    ))}
-                  </ScrollView>
-                </View>
-              ) : null}
+                    <Pressable
+                      onPress={() => setActiveTab("popular")}
+                      className={`rounded-full px-4 py-2.5 border ${
+                        activeTab === "popular"
+                          ? "bg-chef-saffron border-chef-saffron"
+                          : "bg-chef-panel/40 border-chef-line/60"
+                      }`}
+                    >
+                      <Text
+                        className={`text-chef-sm font-extrabold ${
+                          activeTab === "popular" ? "text-chef-black" : "text-chef-cream"
+                        }`}
+                      >
+                        Popular This Week
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => setActiveTab("following")}
+                      className={`rounded-full px-4 py-2.5 border ${
+                        activeTab === "following"
+                          ? "bg-chef-saffron border-chef-saffron"
+                          : "bg-chef-panel/40 border-chef-line/60"
+                      }`}
+                    >
+                      <Text
+                        className={`text-chef-sm font-extrabold ${
+                          activeTab === "following" ? "text-chef-black" : "text-chef-cream"
+                        }`}
+                      >
+                        Friends & Following
+                      </Text>
+                    </Pressable>
+
+                    <Pressable
+                      onPress={() => setActiveTab("trending")}
+                      className={`rounded-full px-4 py-2.5 border ${
+                        activeTab === "trending"
+                          ? "bg-chef-saffron border-chef-saffron"
+                          : "bg-chef-panel/40 border-chef-line/60"
+                      }`}
+                    >
+                      <Text
+                        className={`text-chef-sm font-extrabold ${
+                          activeTab === "trending" ? "text-chef-black" : "text-chef-cream"
+                        }`}
+                      >
+                        Trending Near You
+                      </Text>
+                    </Pressable>
+                  </View>
+                </ScrollView>
+              </View>
 
               <View className="mb-4 flex-row items-end justify-between px-6">
                 <View>
-                  <Text className="text-chef-xl font-extrabold text-chef-cream">{t("home.feedTitle")}</Text>
-                  <Text className="mt-1 text-chef-sm font-semibold text-chef-muted">{t("home.dishesFound", { count: filteredRecipes.length })}</Text>
+                  <Text className="text-chef-xl font-extrabold text-chef-cream">
+                    {activeTab === "forYou"
+                      ? "For You"
+                      : activeTab === "popular"
+                      ? "Popular This Week"
+                      : activeTab === "following"
+                      ? "Friends & Following"
+                      : "Trending Near You"}
+                  </Text>
+                  <Text className="mt-1 text-chef-sm font-semibold text-chef-muted">{t("home.dishesFound", { count: processedRecipes.length })}</Text>
                 </View>
                 <Text className="text-chef-sm font-extrabold text-chef-saffron">{selectedCategory}</Text>
               </View>
@@ -239,6 +376,86 @@ export default function HomeFeedTab() {
           showsVerticalScrollIndicator={false}
         />
       </SafeAreaView>
+
+      {/* Loading Modal */}
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={isScanning}
+        onRequestClose={() => setIsScanning(false)}
+      >
+        <View className="flex-1 items-center justify-center bg-black/60">
+          <View className="mx-10 rounded-chef border border-chef-line bg-chef-charcoal p-6 items-center justify-center">
+            <ActivityIndicator color={colors.saffron} size="large" />
+            <Text className="mt-4 text-chef-base font-extrabold text-chef-cream text-center">
+              Analyzing ingredients...
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Detected Ingredients Modal */}
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={showDetectedModal}
+        onRequestClose={() => setShowDetectedModal(false)}
+      >
+        <Pressable 
+          className="flex-1 items-center justify-center bg-black/75 px-6"
+          onPress={() => setShowDetectedModal(false)}
+        >
+          <Pressable 
+            className="w-full max-w-sm rounded-chef border border-chef-line bg-chef-charcoal p-6"
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View className="flex-row items-center justify-between border-b border-chef-line pb-4 mb-4">
+              <Text className="text-chef-lg font-extrabold text-chef-cream">
+                Detected Ingredients
+              </Text>
+              <Pressable 
+                className="h-8 w-8 items-center justify-center rounded-full bg-chef-line active:opacity-80"
+                onPress={() => setShowDetectedModal(false)}
+              >
+                <Text className="text-chef-base font-extrabold text-chef-cream">✕</Text>
+              </Pressable>
+            </View>
+
+            <ScrollView className="max-h-60 mb-6">
+              {detectedIngredients && detectedIngredients.length > 0 ? (
+                detectedIngredients.map((ingredient, idx) => (
+                  <View key={idx} className="flex-row items-center py-2">
+                    <Text className="text-chef-saffron text-chef-lg mr-2">•</Text>
+                    <Text className="text-chef-cream text-chef-base font-semibold capitalize">
+                      {ingredient}
+                    </Text>
+                  </View>
+                ))
+              ) : (
+                <Text className="text-chef-muted text-chef-sm italic">
+                  No ingredients detected.
+                </Text>
+              )}
+            </ScrollView>
+
+            <Pressable
+              className="w-full bg-chef-saffron rounded-chef py-3.5 items-center justify-center active:opacity-90"
+              onPress={() => setShowDetectedModal(false)}
+            >
+              <Text className="text-chef-black font-extrabold text-chef-base">
+                Close
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <CommentsBottomSheet
+        visible={!!commentsRecipe}
+        onClose={() => setCommentsRecipe(null)}
+        recipeId={commentsRecipe?.id || ""}
+        recipeTitle={commentsRecipe?.title || ""}
+      />
     </View>
   );
 }

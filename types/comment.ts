@@ -9,4 +9,6 @@ export type RecipeComment = {
   createdAt: Date | null;
   likesCount: number;
   isOptimistic?: boolean;
+  parentCommentId?: string | null;
+  replyToUsername?: string | null;
 };

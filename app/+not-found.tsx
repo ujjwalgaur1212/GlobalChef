@@ -8,11 +8,11 @@ import { colors } from "@/constants/theme";
 export default function NotFoundScreen() {
   return (
     <TabPlaceholder
-      description="That screen does not exist in GlobalChef yet."
+      description="That screen does not exist in HiChef yet."
       eyebrow="404"
       icon={<ArrowLeft stroke={colors.saffron} size={30} />}
       title="Lost in the kitchen"
-      action={<Button onPress={() => router.replace("/")} title="Back to GlobalChef" />}
+      action={<Button onPress={() => router.replace("/")} title="Back to HiChef" />}
     />
   );
 }

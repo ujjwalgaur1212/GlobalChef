@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   setDoc,
   startAfter,
+  where,
   type DocumentData,
   type QueryDocumentSnapshot
 } from "firebase/firestore";
@@ -80,8 +81,8 @@ export async function upsertUserProfile(user: AuthUser) {
 function mapUserProfile(userId: string, data: DocumentData): UserProfile {
   return {
     id: userId,
-    displayName: toSafeString(data.displayName, "GlobalChef cook"),
-    username: toSafeString(data.username, buildUsername(toSafeString(data.displayName, "GlobalChef cook"), userId)),
+    displayName: toSafeString(data.displayName, "HiChef cook"),
+    username: toSafeString(data.username, buildUsername(toSafeString(data.displayName, "HiChef cook"), userId)),
     email: toSafeString(data.email),
     photoURL: typeof data.photoURL === "string" ? data.photoURL : null,
     bio: toSafeString(data.bio),
@@ -180,6 +181,9 @@ async function uploadProfilePhoto(userId: string, photoUri: string) {
 export async function updateChefProfile(input: UpdateUserProfileInput) {
   const userId = toSafeString(input.userId);
   const displayName = toSafeString(input.displayName).trim();
+  const rawUsername = toSafeString(input.username).trim().toLowerCase();
+  // Filter username to alphanumeric and underscores only
+  const username = rawUsername.replace(/[^a-z0-9_]+/g, "");
   const bio = toSafeString(input.bio).trim();
   const country = toSafeString(input.country).trim();
 
@@ -191,13 +195,36 @@ export async function updateChefProfile(input: UpdateUserProfileInput) {
     throw new Error("Display name is required.");
   }
 
+  if (!username) {
+    throw new Error("Username is required.");
+  }
+
+  if (username.length < 3) {
+    throw new Error("Username must be at least 3 characters.");
+  }
+
+  // Check if username is already taken by another user
+  const usersRef = collection(requireDb(), "users");
+  const q = query(usersRef, where("username", "==", username));
+  const querySnapshot = await getDocs(q);
+  let isTaken = false;
+  querySnapshot.forEach((docSnap) => {
+    if (docSnap.id !== userId) {
+      isTaken = true;
+    }
+  });
+
+  if (isTaken) {
+    throw new Error("This username is already taken.");
+  }
+
   const photoURL = input.photoUri ? await uploadProfilePhoto(userId, input.photoUri) : undefined;
 
   await setDoc(
     doc(requireDb(), "users", userId),
     {
       displayName,
-      username: buildUsername(displayName, userId),
+      username,
       bio,
       country,
       ...(photoURL ? { photoURL } : {}),

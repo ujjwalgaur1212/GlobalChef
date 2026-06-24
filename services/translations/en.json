@@ -20,7 +20,7 @@
       "loginHeaderTitle": "Sign in and start cooking across borders."
     },
     "signup": {
-      "title": "Join GlobalChef.",
+      "title": "Join HiChef.",
       "subtitle": "Your account will power recipe uploads, saved discoveries, and community features as they arrive.",
       "nameLabel": "Display name",
       "signupBtn": "Create account",
@@ -37,7 +37,7 @@
       "successAlert": "Check your email for instructions to reset your password.",
       "recoveryEyebrow": "Account recovery",
       "recoveryTitle": "Reset your password.",
-      "recoverySubtitle": "Enter the email connected to your GlobalChef account and Firebase will send a reset link.",
+      "recoverySubtitle": "Enter the email connected to your HiChef account and Firebase will send a reset link.",
       "rememberText": "Remembered it? ",
       "successAlertSent": "Password reset email sent. Check your inbox for the next step."
     },
@@ -62,18 +62,18 @@
     "welcomeDefault": "What are we cooking, Chef?",
     "searchPlaceholder": "Search recipes, cuisines, or countries",
     "trendingTitle": "Trending recipes",
-    "trendingSubtitle": "Fresh from GlobalChef cooks",
+    "trendingSubtitle": "Fresh from HiChef cooks",
     "feedTitle": "Recipe feed",
     "dishesFound": "{{count}} dishes found",
     "dishesFound_one": "1 dish found",
     "couldNotLoad": "Could not load recipes",
     "noRecipes": "No recipes yet",
-    "noRecipesSubtitle": "Upload the first GlobalChef recipe, or pull to refresh after seed data is created."
+    "noRecipesSubtitle": "Upload the first HiChef recipe, or pull to refresh after seed data is created."
   },
   "upload": {
     "title": "Upload recipe",
     "headerTitle": "Share a dish with the world.",
-    "subtitle": "Add the core recipe details, upload a strong image, and publish it to the GlobalChef feed.",
+    "subtitle": "Add the core recipe details, upload a strong image, and publish it to the HiChef feed.",
     "changeImage": "Change image",
     "tapChoosePhoto": "Tap to choose another photo",
     "pickImage": "Pick a recipe image",
@@ -112,7 +112,7 @@
       "notSignedIn": "You must be signed in to upload a recipe.",
       "signInBefore": "Sign in before uploading a recipe."
     },
-    "success": "Recipe uploaded to the GlobalChef feed."
+    "success": "Recipe uploaded to the HiChef feed."
   },
   "search": {
     "headerTitle": "Search and discovery",
@@ -145,12 +145,12 @@
   },
   "community": {
     "headerTitle": "Community",
-    "headerSubtitle": "Cook with the GlobalChef table.",
+    "headerSubtitle": "Cook with the HiChef table.",
     "subtitle": "Follow chefs, track fresh dishes, and catch the recipes people are gathering around.",
     "suggestedChefs": "Suggested chefs",
     "trendingChefs": "Trending chefs",
     "noChefsTitle": "No new chefs yet",
-    "noChefsSubtitle": "As more cooks join GlobalChef, fresh suggestions will appear here.",
+    "noChefsSubtitle": "As more cooks join HiChef, fresh suggestions will appear here.",
     "trendingWarming": "Trending chefs are warming up",
     "trendingFollowerCounts": "Follower counts will shape this section as the community grows.",
     "networkTitle": "Recipes from followed chefs",
@@ -190,12 +190,13 @@
     "alertLikeBodyDefault": "One of your recipes got a new like.",
     "alertComment": "{{name}} commented on your recipe.",
     "alertCommentBody": "\"{{text}}\"",
+    "alertReply": "{{name}} replied to your comment.",
     "alertCommentBodyDefault": "Someone left a note on your recipe.",
     "unread": "Unread",
     "markAllRead": "Mark all read",
     "read": "Read",
-    "activityDefault": "New GlobalChef activity",
-    "activityBodyDefault": "Open GlobalChef to see what changed.",
+    "activityDefault": "New HiChef activity",
+    "activityBodyDefault": "Open HiChef to see what changed.",
     "justNow": "Just now",
     "minAgo": "{{count}}m ago",
     "hoursAgo": "{{count}}h ago",
@@ -289,8 +290,8 @@
     "byChef": "By {{name}}",
     "alreadyLikedComment": "You already liked this comment",
     "shareError": "Could not open sharing right now.",
-    "shareMessage": "Try \"{{title}}\" on GlobalChef. {{cuisine}} from {{country}}.",
-    "shareTitle": "GlobalChef recipe",
+    "shareMessage": "Try \"{{title}}\" on HiChef. {{cuisine}} from {{country}}.",
+    "shareTitle": "HiChef recipe",
     "global": "Global",
     "chefsChoice": "Chef's choice"
   },
@@ -312,9 +313,9 @@
     "publicChefProfile": "Public chef profile",
     "recipeGrid": "Recipe grid",
     "dishesByChef": "{{count}} dishes by {{name}}",
-    "shareChefTitle": "{{name}} on GlobalChef",
-    "shareChefMessage": "Meet {{name}} on GlobalChef. globalchef://chef/{{id}}",
-    "shareChefMessageWithCountry": "Meet {{name}} on GlobalChef from {{country}}. globalchef://chef/{{id}}"
+    "shareChefTitle": "{{name}} on HiChef",
+    "shareChefMessage": "Meet {{name}} on HiChef. globalchef://chef/{{id}}",
+    "shareChefMessageWithCountry": "Meet {{name}} on HiChef from {{country}}. globalchef://chef/{{id}}"
   },
   "savedRecipes": {
     "title": "Saved Recipes",
@@ -356,5 +357,18 @@
     "countryTooLong": "Country must be 56 characters or fewer.",
     "checkFields": "Check the highlighted profile fields.",
     "success": "Profile updated"
+  },
+  "tarzan": {
+    "title": "Tarzan",
+    "welcome": "Hi! I'm Tarzan, your cooking companion. Ask me anything about recipes, ingredients, cooking techniques, substitutions, meal planning, or nutrition.",
+    "greeting": "Hello Chef, what are we cooking today?",
+    "inputPlaceholder": "Ask about recipes, substitutions...",
+    "tapToSpeak": "Tap mic or select a cooking prompt above",
+    "listening": "Listening...",
+    "voiceMode": "Voice Mode",
+    "textMode": "Text Mode",
+    "cancel": "Cancel",
+    "micPermissionTitle": "Permission Required",
+    "micPermissionMessage": "Microphone and speech recognition permissions are required to use voice input. Please enable them in your device settings."
   }
 }

@@ -39,6 +39,8 @@ import { IngredientList } from "@/components/recipe/IngredientList";
 import { RecipeHeader } from "@/components/recipe/RecipeHeader";
 import { RecipeMetaCard } from "@/components/recipe/RecipeMetaCard";
 import { StepList } from "@/components/recipe/StepList";
+import { CookWithMeModal } from "@/components/recipe/CookWithMeModal";
+import { CommentsBottomSheet } from "@/components/CommentsBottomSheet";
 import { colors } from "@/constants/theme";
 import { useAuth } from "@/hooks/useAuth";
 import { useFollow } from "@/hooks/useFollow";
@@ -59,7 +61,7 @@ import {
   getUserCollections,
   removeRecipeFromCollection
 } from "@/services/collectionService";
-import { getRecipeErrorMessage, subscribeToRecipe } from "@/services/recipeService";
+import { getRecipeErrorMessage, subscribeToRecipe, trackRecipeShare } from "@/services/recipeService";
 import { getRatingErrorMessage, getUserRating, rateRecipe, removeRating } from "@/services/ratingService";
 import { getUserProfile } from "@/services/userService";
 import type { AuthUser } from "@/types/auth";
@@ -182,7 +184,7 @@ function buildOptimisticComment(recipeId: string, text: string, user: AuthUser):
     commentId: optimisticId,
     recipeId,
     userId: user.id,
-    userName: user.displayName || "GlobalChef cook",
+    userName: user.displayName || "HiChef cook",
     userAvatar: user.photoURL ?? null,
     text,
     createdAt: new Date(),
@@ -205,7 +207,7 @@ function CommentCard({ comment, currentUserId, isDeleting, isLiked, isLiking, on
   const { t } = useTranslation();
   const entrance = useRef(new Animated.Value(0)).current;
   const heartScale = useRef(new Animated.Value(1)).current;
-  const initials = getInitials(comment.userName || "GlobalChef cook") || "G";
+  const initials = getInitials(comment.userName || "HiChef cook") || "H";
 
   useEffect(() => {
     Animated.timing(entrance, {
@@ -259,7 +261,7 @@ function CommentCard({ comment, currentUserId, isDeleting, isLiked, isLiking, on
         <View className="flex-1">
           <View className="flex-row items-center justify-between">
             <Text className="max-w-[62%] text-chef-sm font-extrabold text-chef-cream" numberOfLines={1}>
-              {comment.userName || "GlobalChef cook"}
+              {comment.userName || "HiChef cook"}
             </Text>
             <Text className="text-chef-xs font-bold text-chef-muted">{formatCommentDate(comment.createdAt, t)}</Text>
           </View>
@@ -332,6 +334,8 @@ export default function RecipeDetailScreen() {
   const [isRatingUpdating, setIsRatingUpdating] = useState(false);
   const [chefProfile, setChefProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isCookingModeActive, setIsCookingModeActive] = useState(false);
+  const [isCommentsSheetVisible, setIsCommentsSheetVisible] = useState(false);
   const entrance = useRef(new Animated.Value(0)).current;
   const commentInputScale = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef<ScrollView>(null);
@@ -339,8 +343,8 @@ export default function RecipeDetailScreen() {
   const { t } = useTranslation();
   const cleanRecipeId = useMemo(() => recipeId?.trim() ?? "", [recipeId]);
   const commentIds = useMemo(() => comments.filter((comment) => !comment.isOptimistic).map((comment) => comment.commentId), [comments]);
-  const chefName = chefProfile?.displayName || recipe?.authorName || "GlobalChef cook";
-  const chefInitials = getInitials(chefName) || "GC";
+  const chefName = chefProfile?.displayName || recipe?.authorName || "HiChef cook";
+  const chefInitials = getInitials(chefName) || "HC";
   const createdDateLabel = useMemo(() => formatRecipeDate(recipe?.createdAt ?? null, t), [recipe?.createdAt, t]);
 
   useEffect(() => {
@@ -674,14 +678,18 @@ export default function RecipeDetailScreen() {
     }
 
     try {
-      await Share.share({
-        message: t("recipeDetail.shareMessage", {
-          title: recipe.title || t("recipeDetail.shareTitle"),
-          cuisine: recipe.cuisine || t("recipeDetail.chefsChoice"),
-          country: recipe.country || t("recipeDetail.global")
-        }),
-        title: recipe.title || t("recipeDetail.shareTitle")
+      const usernameDisplay = chefProfile?.username ? `@${chefProfile.username}` : recipe.authorName;
+      const cleanDesc = recipe.description ? `\n\n"${recipe.description}"` : "";
+      const shareMessage = `🍳 Check out "${recipe.title}" by ${usernameDisplay} on HiChef!${cleanDesc}\n\nDeep Link: globalchef://recipe/${recipe.id}\nWeb Link: https://globalchef.app/recipe/${recipe.id}`;
+
+      const result = await Share.share({
+        title: recipe.title,
+        message: shareMessage
       });
+
+      if (result.action === Share.sharedAction) {
+        await trackRecipeShare(recipe.id);
+      }
     } catch {
       showToast(t("recipeDetail.shareError"), "error");
     }
@@ -893,8 +901,12 @@ export default function RecipeDetailScreen() {
                 value={`${Number(recipe.likesCount ?? recipe.likes) || 0}`}
                 onPress={handleLike}
               />
-              <RecipeMetaCard icon={<MessageCircle stroke={colors.saffron} size={20} />} label={t("recipeDetail.comments")} value={`${Number(recipe.commentsCount) || comments.length}`} />
+              <RecipeMetaCard icon={<MessageCircle stroke={colors.saffron} size={20} />} label={t("recipeDetail.comments")} value={`${Number(recipe.commentsCount) || comments.length}`} onPress={() => setIsCommentsSheetVisible(true)} />
+            </View>
+
+            <View className="mt-3 flex-row gap-3">
               <RecipeMetaCard icon={<Bookmark stroke={colors.saffron} size={20} />} label={t("recipeDetail.saves")} value={`${Number(recipe.savesCount) || 0}`} />
+              <RecipeMetaCard icon={<Send stroke={colors.saffron} size={20} />} label={t("recipeDetail.shares", "Shares")} value={`${Number(recipe.sharesCount) || 0}`} onPress={handleShare} />
             </View>
 
             <View className="mt-3 flex-row gap-3">
@@ -928,7 +940,7 @@ export default function RecipeDetailScreen() {
                     {chefName}
                   </Text>
                   <Text className="mt-1 text-chef-sm font-semibold text-chef-muted" numberOfLines={1}>
-                    {chefProfile?.country || "GlobalChef cook"}
+                    {chefProfile?.country || "HiChef cook"}
                   </Text>
                 </View>
                 <UserRound stroke={colors.saffron} size={22} />
@@ -994,6 +1006,17 @@ export default function RecipeDetailScreen() {
               </View>
             ) : null}
 
+            {recipe.steps && recipe.steps.length > 0 ? (
+              <Pressable
+                onPress={() => setIsCookingModeActive(true)}
+                className="mt-6 flex-row items-center justify-center bg-chef-saffron rounded-chef py-4 px-5 active:opacity-90"
+              >
+                <Text className="text-chef-black font-extrabold text-chef-base">
+                  👨‍🍳 Cook With Me (Voice Guided)
+                </Text>
+              </Pressable>
+            ) : null}
+
             <Section title={t("recipeDetail.ingredients")}>
               <IngredientList ingredients={recipe.ingredients} />
             </Section>
@@ -1003,67 +1026,22 @@ export default function RecipeDetailScreen() {
             </Section>
 
             <Section title={t("recipeDetail.comments")}>
-              <View className="rounded-chef border border-chef-line bg-chef-panel p-4">
-                <Animated.View style={{ transform: [{ scale: commentInputScale }] }}>
-                  <View className="flex-row items-center rounded-chef border border-chef-line bg-chef-black px-4">
-                    <MessageCircle stroke={colors.textMuted} size={18} />
-                    <TextInput
-                      className="min-h-12 flex-1 px-3 py-3 text-chef-base font-semibold text-chef-cream"
-                      multiline
-                      onBlur={() => animateCommentInput(1)}
-                      onChangeText={setCommentBody}
-                      onFocus={() => animateCommentInput(1.02)}
-                      placeholder={t("recipeDetail.kitchenNotePlaceholder")}
-                      placeholderTextColor={colors.textMuted}
-                      value={commentBody}
-                    />
-                    <Pressable
-                      className="h-10 w-10 items-center justify-center rounded-full bg-chef-saffron"
-                      disabled={!!isSendingComment}
-                      onPress={handleAddComment}
-                    >
-                      {isSendingComment ? (
-                        <ActivityIndicator color={colors.background} size="small" />
-                      ) : (
-                        <Send stroke={colors.background} size={18} strokeWidth={2.5} />
-                      )}
-                    </Pressable>
-                  </View>
-                </Animated.View>
-
-                {areCommentsLoading ? (
-                  <View className="items-center py-8">
-                    <ActivityIndicator color={colors.saffron} />
-                  </View>
-                ) : comments.length === 0 ? (
-                  <View className="items-center py-8">
-                    <View className="mb-3 h-12 w-12 items-center justify-center rounded-full bg-chef-saffron/15">
-                      <Utensils stroke={colors.saffron} size={22} />
-                    </View>
-                    <Text className="text-center text-chef-base font-extrabold text-chef-cream">{t("recipeDetail.noComments")}</Text>
-                    <Text className="mt-1 text-center text-chef-sm text-chef-muted">{t("recipeDetail.noCommentsSubtitle")}</Text>
-                  </View>
-                ) : (
-                  <View className="mt-5">
-                    {comments.map((comment, index) => (
-                      <View
-                        className={`${index === comments.length - 1 ? "" : "mb-4 border-b border-chef-line pb-4"}`}
-                        key={comment.id}
-                      >
-                        <CommentCard
-                          comment={comment}
-                          currentUserId={user.id}
-                          isDeleting={pendingCommentDeleteIds.has(comment.commentId)}
-                          isLiked={likedCommentIds.has(comment.commentId)}
-                          isLiking={pendingCommentLikeIds.has(comment.commentId)}
-                          onDelete={handleDeleteComment}
-                          onLike={handleLikeComment}
-                        />
-                      </View>
-                    ))}
-                  </View>
-                )}
-              </View>
+              <Pressable
+                onPress={() => setIsCommentsSheetVisible(true)}
+                className="rounded-chef border border-chef-line bg-chef-panel p-5 active:opacity-85 flex-row items-center justify-between"
+              >
+                <View className="flex-1 pr-4">
+                  <Text className="text-chef-base font-extrabold text-chef-cream">
+                    {comments.length === 0 ? "Be the first to comment" : `View all ${comments.length} comments`}
+                  </Text>
+                  <Text className="mt-1 text-chef-sm text-chef-muted">
+                    {comments.length === 0 ? "Share your kitchen notes and questions." : "Join the discussion with other chefs."}
+                  </Text>
+                </View>
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-chef-saffron/15">
+                  <Text className="text-chef-base">💬</Text>
+                </View>
+              </Pressable>
             </Section>
           </View>
         </Animated.View>
@@ -1145,6 +1123,20 @@ export default function RecipeDetailScreen() {
           </View>
         </View>
       </Modal>
+
+      <CookWithMeModal
+        visible={isCookingModeActive}
+        onClose={() => setIsCookingModeActive(false)}
+        steps={recipe.steps || []}
+        recipeTitle={recipe.title}
+      />
+
+      <CommentsBottomSheet
+        visible={isCommentsSheetVisible}
+        onClose={() => setIsCommentsSheetVisible(false)}
+        recipeId={recipe.id}
+        recipeTitle={recipe.title}
+      />
     </KeyboardAvoidingView>
   );
 }

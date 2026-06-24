@@ -127,9 +127,10 @@ type RecipeResultCardProps = {
   onLike: (recipeId: string) => void;
   onOpen: (recipeId: string) => void;
   onSave: (recipeId: string) => void;
+  onOpenChef?: (chefId: string) => void;
 };
 
-function RecipeResultCard({ recipe, isLiked, isLikeLoading, isSaved, isSaveLoading, onLike, onOpen, onSave }: RecipeResultCardProps) {
+function RecipeResultCard({ recipe, isLiked, isLikeLoading, isSaved, isSaveLoading, onLike, onOpen, onSave, onOpenChef }: RecipeResultCardProps) {
   return (
     <Pressable className="flex-row rounded-chef border border-chef-line bg-chef-panel p-3" onPress={() => onOpen(recipe.id)}>
       <Image className="h-28 w-28 rounded-chef" resizeMode="cover" source={{ uri: recipe.imageUrl }} />
@@ -137,9 +138,19 @@ function RecipeResultCard({ recipe, isLiked, isLikeLoading, isSaved, isSaveLoadi
         <Text className="text-chef-lg font-extrabold text-chef-cream" numberOfLines={2}>
           {recipe.title}
         </Text>
-        <Text className="mt-1 text-chef-sm font-semibold text-chef-muted" numberOfLines={1}>
-          {recipe.authorName || "GlobalChef cook"}
-        </Text>
+        <Pressable
+          onPress={(event) => {
+            event.stopPropagation();
+            if (recipe.authorId && onOpenChef) {
+              onOpenChef(recipe.authorId);
+            }
+          }}
+          className="active:opacity-75"
+        >
+          <Text className="mt-1 text-chef-sm font-semibold text-chef-muted" numberOfLines={1}>
+            {recipe.authorName || "HiChef cook"}
+          </Text>
+        </Pressable>
         <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-saffron" numberOfLines={1}>
           {recipe.country} / {recipe.cuisine}
         </Text>
@@ -185,7 +196,7 @@ function ChefResultCard({ chef, currentUserId, onOpenChef }: ChefResultCardProps
   const { showToast } = useToast();
   const { isFollowing, isLoading, toggleFollow } = useFollow(currentUserId, chef.id);
   const isOwnProfile = chef.id === currentUserId;
-  const initials = getInitials(chef.displayName || "GlobalChef cook") || "GC";
+  const initials = getInitials(chef.displayName || "HiChef cook") || "HC";
 
   async function handleFollow() {
     if (isOwnProfile) {
@@ -219,7 +230,7 @@ function ChefResultCard({ chef, currentUserId, onOpenChef }: ChefResultCardProps
           @{chef.username}
         </Text>
         <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-saffron" numberOfLines={1}>
-          {chef.country || "GlobalChef"}
+          {chef.country || "HiChef"}
         </Text>
       </View>
       {!isOwnProfile ? (
@@ -617,6 +628,7 @@ export default function SearchTab() {
                 onOpen={openRecipe}
                 onSave={handleSave}
                 recipe={item}
+                onOpenChef={openChef}
               />
             </View>
           )}

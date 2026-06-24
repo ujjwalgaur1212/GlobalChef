@@ -63,6 +63,8 @@ function getNotificationIcon(type: NotificationType) {
       return <Heart stroke={colors.tomato} size={20} />;
     case "comment":
       return <MessageCircle stroke={colors.herb} size={20} />;
+    case "reply":
+      return <MessageCircle stroke={colors.saffron} size={20} />;
     default:
       return <Bell stroke={colors.saffron} size={20} />;
   }
@@ -76,6 +78,8 @@ function getNotificationTitle(notification: Notification) {
       return i18n.t("notifications.alertLike", { name: notification.senderName });
     case "comment":
       return i18n.t("notifications.alertComment", { name: notification.senderName });
+    case "reply":
+      return i18n.t("notifications.alertReply", { name: notification.senderName });
     default:
       return i18n.t("notifications.activityDefault");
   }
@@ -86,6 +90,7 @@ function getNotificationBody(notification: Notification) {
     case "follow":
       return i18n.t("notifications.alertFollowBody");
     case "comment":
+    case "reply":
       return notification.commentText || "";
     case "like":
     default:
@@ -102,7 +107,8 @@ type NotificationRowProps = {
 
 function NotificationRow({ notification, isUpdating, onOpen, onMarkRead }: NotificationRowProps) {
   const { t } = useTranslation();
-  const initials = getInitials(notification.senderName || "GlobalChef cook") || "GC";
+  const router = useRouter();
+  const initials = getInitials(notification.senderName || "HiChef cook") || "GC";
   const isUnread = !notification.isRead;
   const body = getNotificationBody(notification);
 
@@ -112,7 +118,18 @@ function NotificationRow({ notification, isUpdating, onOpen, onMarkRead }: Notif
       onPress={() => onOpen(notification)}
     >
       <View className="flex-row items-start">
-        <View className="mr-3 h-12 w-12 items-center justify-center rounded-full bg-chef-black overflow-hidden">
+        <Pressable
+          className="mr-3 h-12 w-12 items-center justify-center rounded-full bg-chef-black overflow-hidden active:opacity-75"
+          onPress={(event) => {
+            event.stopPropagation();
+            if (notification.senderId) {
+              router.push({
+                pathname: "/chef/[id]",
+                params: { id: notification.senderId }
+              });
+            }
+          }}
+        >
           {notification.senderPhotoURL ? (
             <Image
               source={{ uri: notification.senderPhotoURL }}
@@ -122,7 +139,7 @@ function NotificationRow({ notification, isUpdating, onOpen, onMarkRead }: Notif
           ) : (
             <Text className="text-chef-sm font-extrabold text-chef-saffron">{initials}</Text>
           )}
-        </View>
+        </Pressable>
         <View className="flex-1">
           <View className="flex-row items-start justify-between">
             <View className="flex-1 pr-3">
@@ -229,7 +246,7 @@ export default function NotificationsTab() {
       return;
     }
 
-    if (notification.type === "comment" && notification.recipeId) {
+    if ((notification.type === "comment" || notification.type === "reply") && notification.recipeId) {
       router.push({
         pathname: "/recipe/[id]",
         params: { id: notification.recipeId, scrollToComments: "true" }
@@ -294,12 +311,6 @@ export default function NotificationsTab() {
           ListHeaderComponent={
             <View className="px-6 pb-5 pt-3">
               <View className="flex-row items-center justify-between mb-4">
-                <Pressable
-                  className="h-11 w-11 items-center justify-center rounded-full bg-chef-panel"
-                  onPress={() => router.back()}
-                >
-                  <ArrowLeft stroke={colors.cream} size={22} strokeWidth={2.4} />
-                </Pressable>
                 <View className="h-12 w-12 items-center justify-center rounded-chef border border-chef-line bg-chef-panel">
                   <Bell stroke={colors.saffron} size={22} strokeWidth={2.4} />
                 </View>

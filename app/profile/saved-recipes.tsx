@@ -13,6 +13,7 @@ import { useRecipeInteractions } from "@/hooks/useRecipeInteractions";
 import { useToast } from "@/hooks/useToast";
 import { getRecipesForInteractions } from "@/services/recipeInteractionService";
 import type { Recipe } from "@/types/recipe";
+import { CommentsBottomSheet } from "@/components/CommentsBottomSheet";
 
 export default function SavedRecipesScreen() {
   const { t } = useTranslation();
@@ -33,6 +34,7 @@ export default function SavedRecipesScreen() {
   const [error, setError] = useState<string | null>(null);
   const [pendingLikeIds, setPendingLikeIds] = useState<Set<string>>(new Set());
   const [pendingSaveIds, setPendingSaveIds] = useState<Set<string>>(new Set());
+  const [commentsRecipe, setCommentsRecipe] = useState<{ id: string; title: string } | null>(null);
 
   const sortedSavedInteractions = useMemo(
     () =>
@@ -199,6 +201,7 @@ export default function SavedRecipesScreen() {
                   })
                 }
                 onSave={handleSave}
+                onCommentPress={(id, title) => setCommentsRecipe({ id, title })}
                 recipe={item}
               />
             </View>
@@ -207,6 +210,13 @@ export default function SavedRecipesScreen() {
           showsVerticalScrollIndicator={false}
         />
       </SafeAreaView>
+
+      <CommentsBottomSheet
+        visible={!!commentsRecipe}
+        onClose={() => setCommentsRecipe(null)}
+        recipeId={commentsRecipe?.id || ""}
+        recipeTitle={commentsRecipe?.title || ""}
+      />
     </View>
   );
 }

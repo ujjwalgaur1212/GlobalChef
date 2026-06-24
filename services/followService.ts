@@ -135,7 +135,7 @@ export async function followChef(followerId: string, followedId: string) {
     });
     createFollowNotification(
       followerId,
-      auth?.currentUser?.displayName || "GlobalChef cook",
+      auth?.currentUser?.displayName || "HiChef cook",
       auth?.currentUser?.photoURL ?? null,
       followedId,
       transaction

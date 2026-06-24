@@ -13,7 +13,7 @@ import {
 
 import { auth, db } from "@/firebase/config";
 import { toSafeDate, toSafeNumber, toSafeString } from "@/services/firestoreConverters";
-import { createCommentNotification } from "@/services/notificationService";
+import { createCommentNotification, createReplyNotification } from "@/services/notificationService";
 import { mapRecipeData } from "@/services/recipeService";
 import type { AuthUser } from "@/types/auth";
 import type { RecipeComment } from "@/types/comment";
@@ -60,11 +60,13 @@ function mapCommentDocument(document: QueryDocumentSnapshot<DocumentData>): Reci
     commentId: toSafeString(data.commentId, document.id),
     recipeId: toSafeString(data.recipeId),
     userId: toSafeString(data.userId),
-    userName: toSafeString(data.userName, "GlobalChef cook"),
+    userName: toSafeString(data.userName, "HiChef cook"),
     userAvatar: typeof data.userAvatar === "string" ? data.userAvatar : null,
     text: toSafeString(data.text),
     createdAt: toSafeDate(data.createdAt),
-    likesCount: toSafeNumber(data.likesCount)
+    likesCount: toSafeNumber(data.likesCount),
+    parentCommentId: typeof data.parentCommentId === "string" ? data.parentCommentId : null,
+    replyToUsername: typeof data.replyToUsername === "string" ? data.replyToUsername : null
   };
 }
 
@@ -115,7 +117,13 @@ export function subscribeToUserLikedComments(
   };
 }
 
-export async function addRecipeComment(recipeId: string, text: string, user: AuthUser) {
+export async function addRecipeComment(
+  recipeId: string,
+  text: string,
+  user: AuthUser,
+  parentCommentId?: string | null,
+  replyToUsername?: string | null
+) {
   const trimmedText = text.trim();
 
   if (!trimmedText) {
@@ -142,24 +150,64 @@ export async function addRecipeComment(recipeId: string, text: string, user: Aut
       commentId: nextCommentRef.id,
       recipeId,
       userId: user.id,
-      userName: user.displayName || "GlobalChef cook",
+      userName: user.displayName || "HiChef cook",
       userAvatar: user.photoURL ?? null,
       text: trimmedText,
       createdAt: serverTimestamp(),
-      likesCount: 0
+      likesCount: 0,
+      parentCommentId: parentCommentId || null,
+      replyToUsername: replyToUsername || null
     });
     transaction.update(nextRecipeRef, {
       commentsCount: increment(1)
     });
-    createCommentNotification(
-      user.id,
-      user.displayName || "GlobalChef cook",
-      user.photoURL ?? null,
-      recipeData.authorId || recipeData.createdBy,
-      recipeId,
-      trimmedText.slice(0, 160),
-      transaction
-    );
+
+    let parentCommentUserId: string | null = null;
+    if (parentCommentId) {
+      const parentCommentRef = doc(firestore, "recipes", recipeId, "comments", parentCommentId);
+      const parentCommentSnapshot = await transaction.get(parentCommentRef);
+      if (parentCommentSnapshot.exists()) {
+        parentCommentUserId = toSafeString(parentCommentSnapshot.data().userId);
+      }
+    }
+
+    const recipeAuthorId = recipeData.authorId || recipeData.createdBy;
+
+    if (parentCommentUserId && parentCommentUserId !== user.id) {
+      createReplyNotification(
+        user.id,
+        user.displayName || "HiChef cook",
+        user.photoURL ?? null,
+        parentCommentUserId,
+        recipeId,
+        trimmedText.slice(0, 160),
+        transaction
+      );
+
+      if (recipeAuthorId && recipeAuthorId !== parentCommentUserId && recipeAuthorId !== user.id) {
+        createCommentNotification(
+          user.id,
+          user.displayName || "HiChef cook",
+          user.photoURL ?? null,
+          recipeAuthorId,
+          recipeId,
+          trimmedText.slice(0, 160),
+          transaction
+        );
+      }
+    } else {
+      if (recipeAuthorId && recipeAuthorId !== user.id) {
+        createCommentNotification(
+          user.id,
+          user.displayName || "HiChef cook",
+          user.photoURL ?? null,
+          recipeAuthorId,
+          recipeId,
+          trimmedText.slice(0, 160),
+          transaction
+        );
+      }
+    }
   });
 
   return nextCommentRef.id;

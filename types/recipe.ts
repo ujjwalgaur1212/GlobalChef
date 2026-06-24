@@ -21,6 +21,7 @@ export type Recipe = {
   commentsCount: number;
   averageRating: number;
   ratingsCount: number;
+  sharesCount: number;
 };
 
 export type CreateRecipeInput = {

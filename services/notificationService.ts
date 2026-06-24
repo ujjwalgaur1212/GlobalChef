@@ -43,10 +43,10 @@ function mapNotificationDocument(document: QueryDocumentSnapshot<DocumentData>):
     id: document.id,
     recipientId: toSafeString(data.recipientId),
     senderId: toSafeString(data.senderId),
-    senderName: toSafeString(data.senderName, "GlobalChef cook"),
+    senderName: toSafeString(data.senderName, "HiChef cook"),
     senderPhotoURL: typeof data.senderPhotoURL === "string" ? data.senderPhotoURL : null,
     type:
-      data.type === "follow" || data.type === "comment" || data.type === "like"
+      data.type === "follow" || data.type === "comment" || data.type === "like" || data.type === "reply"
         ? data.type
         : "comment",
     recipeId: toSafeString(data.recipeId) || null,
@@ -74,7 +74,7 @@ export function createFollowNotification(
   const notificationRef = doc(notificationsCollection(firestore));
   const data = {
     senderId: cleanSenderId,
-    senderName: toSafeString(senderName, "GlobalChef cook") || "GlobalChef cook",
+    senderName: toSafeString(senderName, "HiChef cook") || "HiChef cook",
     senderPhotoURL: senderPhotoURL ?? null,
     recipientId: cleanRecipientId,
     type: "follow" as const,
@@ -109,12 +109,49 @@ export function createCommentNotification(
   const notificationRef = doc(notificationsCollection(firestore));
   const data = {
     senderId: cleanSenderId,
-    senderName: toSafeString(senderName, "GlobalChef cook") || "GlobalChef cook",
+    senderName: toSafeString(senderName, "HiChef cook") || "HiChef cook",
     senderPhotoURL: senderPhotoURL ?? null,
     recipientId: cleanRecipientId,
     recipeId: toSafeString(recipeId) || null,
     commentText: toSafeString(commentText) || null,
     type: "comment" as const,
+    isRead: false,
+    createdAt: serverTimestamp()
+  };
+
+  if (transaction) {
+    transaction.set(notificationRef, data);
+  } else {
+    return setDoc(notificationRef, data);
+  }
+}
+
+export function createReplyNotification(
+  senderId: string,
+  senderName: string,
+  senderPhotoURL: string | null,
+  recipientId: string,
+  recipeId: string,
+  commentText: string,
+  transaction?: Transaction
+): Promise<void> | void {
+  const cleanSenderId = toSafeString(senderId);
+  const cleanRecipientId = toSafeString(recipientId);
+
+  if (!cleanSenderId || !cleanRecipientId || cleanSenderId === cleanRecipientId) {
+    return;
+  }
+
+  const firestore = requireDb();
+  const notificationRef = doc(notificationsCollection(firestore));
+  const data = {
+    senderId: cleanSenderId,
+    senderName: toSafeString(senderName, "HiChef cook") || "HiChef cook",
+    senderPhotoURL: senderPhotoURL ?? null,
+    recipientId: cleanRecipientId,
+    recipeId: toSafeString(recipeId) || null,
+    commentText: toSafeString(commentText) || null,
+    type: "reply" as const,
     isRead: false,
     createdAt: serverTimestamp()
   };
@@ -145,7 +182,7 @@ export function createLikeNotification(
   const notificationRef = doc(notificationsCollection(firestore));
   const data = {
     senderId: cleanSenderId,
-    senderName: toSafeString(senderName, "GlobalChef cook") || "GlobalChef cook",
+    senderName: toSafeString(senderName, "HiChef cook") || "HiChef cook",
     senderPhotoURL: senderPhotoURL ?? null,
     recipientId: cleanRecipientId,
     recipeId: toSafeString(recipeId) || null,

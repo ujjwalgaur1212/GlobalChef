@@ -1,11 +1,13 @@
 {
   "expo": {
-    "name": "GlobalChef",
+    "name": "HiChef",
+    "displayName": "HiChef",
     "slug": "globalchef",
     "scheme": "globalchef",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "splash": {
       "backgroundColor": "#0E1111",
       "resizeMode": "contain"
@@ -17,24 +19,35 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.globalchef.app",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "GlobalChef needs photo library access so you can choose recipe images to upload.",
-        "NSCameraUsageDescription": "GlobalChef needs camera access so you can take recipe photos.",
-        "NSPhotoLibraryAddUsageDescription": "GlobalChef needs permission to save edited recipe photos to your library."
+        "NSPhotoLibraryUsageDescription": "HiChef needs photo library access so you can choose recipe images to upload.",
+        "NSCameraUsageDescription": "HiChef needs camera access so you can take recipe photos.",
+        "NSPhotoLibraryAddUsageDescription": "HiChef needs permission to save edited recipe photos to your library."
       }
     },
     "android": {
-      "package": "com.globalchef.app"
+      "package": "com.globalchef.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#111111"
+      }
     },
     "plugins": [
       "expo-router",
       [
         "expo-image-picker",
         {
-          "photosPermission": "GlobalChef needs photo library access so you can choose recipe images to upload.",
-          "cameraPermission": "GlobalChef needs camera access so you can take recipe photos."
+          "photosPermission": "HiChef needs photo library access so you can choose recipe images to upload.",
+          "cameraPermission": "HiChef needs camera access so you can take recipe photos."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "HiChef needs microphone access to convert speech to text.",
+          "speechRecognitionPermission": "HiChef needs speech recognition access to convert speech to text."
+        }
+      ]
     ],
     "web": {
       "bundler": "metro"

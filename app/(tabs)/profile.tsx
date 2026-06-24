@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Bookmark, ChefHat, Folder, Globe2, LogOut, Pencil, Plus, Settings, Trash2, UserRound, UsersRound } from "lucide-react-native";
+import { Bookmark, ChefHat, Folder, Globe2, Grid, LogOut, Pencil, Plus, Settings, Trash2, UserRound, UsersRound } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Alert, Image, ImageBackground, Modal, Pressable, ScrollView, Text, View } from "react-native";
@@ -10,6 +10,7 @@ import { ScreenContainer } from "@/components/ScreenContainer";
 import { colors } from "@/constants/theme";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
+import { useRecipeInteractions } from "@/hooks/useRecipeInteractions";
 import { getAuthErrorMessage } from "@/services/authService";
 import {
   createCollection,
@@ -18,8 +19,10 @@ import {
   getUserCollections,
   updateCollection
 } from "@/services/collectionService";
+import { subscribeToRecipesByAuthor } from "@/services/recipeService";
 import { subscribeToUserProfile } from "@/services/userService";
 import type { RecipeCollection } from "@/types/collection";
+import type { Recipe } from "@/types/recipe";
 import type { UserProfile } from "@/types/user";
 
 function getInitials(name: string) {
@@ -39,7 +42,10 @@ export default function ProfileTab() {
   const { showToast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [collections, setCollections] = useState<RecipeCollection[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoadingCollections, setIsLoadingCollections] = useState(false);
+  const [areRecipesLoading, setAreRecipesLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"recipes" | "collections">("recipes");
   const [isSavingCollection, setIsSavingCollection] = useState(false);
   const [editingCollection, setEditingCollection] = useState<RecipeCollection | null>(null);
   const [isCollectionModalVisible, setIsCollectionModalVisible] = useState(false);
@@ -47,6 +53,8 @@ export default function ProfileTab() {
   const [collectionDescription, setCollectionDescription] = useState("");
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const { savedRecipeIds } = useRecipeInteractions(user?.id);
 
   useEffect(() => {
     if (!user) {
@@ -62,6 +70,27 @@ export default function ProfileTab() {
       }
     );
   }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setRecipes([]);
+      setAreRecipesLoading(false);
+      return;
+    }
+
+    setAreRecipesLoading(true);
+    return subscribeToRecipesByAuthor(
+      user.id,
+      (nextRecipes) => {
+        setRecipes(nextRecipes);
+        setAreRecipesLoading(false);
+      },
+      (recipeError) => {
+        showToast(recipeError.message, "error");
+        setAreRecipesLoading(false);
+      }
+    );
+  }, [user, showToast]);
 
   useEffect(() => {
     let isMounted = true;
@@ -190,7 +219,7 @@ export default function ProfileTab() {
     }
   }
 
-  const displayName = profile?.displayName || user?.displayName || "GlobalChef cook";
+  const displayName = profile?.displayName || user?.displayName || "HiChef cook";
   const initials = getInitials(displayName) || "GC";
 
   return (
@@ -207,6 +236,9 @@ export default function ProfileTab() {
         </View>
         <Text className="text-chef-xs font-bold uppercase text-chef-saffron">{t("profile.headerTitle")}</Text>
         <Text className="mt-3 text-[32px] font-extrabold leading-10 text-chef-cream">{displayName}</Text>
+        {profile?.username ? (
+          <Text className="mt-1.5 text-chef-base font-extrabold text-chef-saffron">@{profile.username}</Text>
+        ) : null}
         <Text className="mt-2 text-chef-base text-chef-muted">{String(user?.email ?? "")}</Text>
         {profile?.country ? (
           <View className="mt-4 flex-row items-center self-start rounded-full bg-chef-panel px-4 py-2">
@@ -216,21 +248,39 @@ export default function ProfileTab() {
         ) : null}
         <Text className="mt-4 text-chef-base leading-7 text-chef-muted">{profile?.bio || t("profile.bioPlaceholder")}</Text>
 
-        <View className="mt-8 flex-row gap-3">
-          <View className="flex-1 rounded-chef border border-chef-line bg-chef-panel p-4">
-            <UsersRound stroke={colors.saffron} size={21} />
-            <Text className="mt-3 text-chef-2xl font-extrabold text-chef-cream">{String(profile?.followersCount ?? 0)}</Text>
-            <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">{t("profile.followers")}</Text>
+        <View className="mt-8 gap-3">
+          <View className="flex-row gap-3">
+            <Pressable
+              className="flex-1 rounded-chef border border-chef-line bg-chef-panel p-4 active:opacity-75"
+              onPress={() => router.push("/(tabs)/community")}
+            >
+              <UsersRound stroke={colors.saffron} size={21} />
+              <Text className="mt-3 text-chef-2xl font-extrabold text-chef-cream">{String(profile?.followersCount ?? 0)}</Text>
+              <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">{t("profile.followers")}</Text>
+            </Pressable>
+            <Pressable
+              className="flex-1 rounded-chef border border-chef-line bg-chef-panel p-4 active:opacity-75"
+              onPress={() => router.push("/(tabs)/community")}
+            >
+              <UserRound stroke={colors.saffron} size={21} />
+              <Text className="mt-3 text-chef-2xl font-extrabold text-chef-cream">{String(profile?.followingCount ?? 0)}</Text>
+              <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">{t("profile.following")}</Text>
+            </Pressable>
           </View>
-          <View className="flex-1 rounded-chef border border-chef-line bg-chef-panel p-4">
-            <UserRound stroke={colors.saffron} size={21} />
-            <Text className="mt-3 text-chef-2xl font-extrabold text-chef-cream">{String(profile?.followingCount ?? 0)}</Text>
-            <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">{t("profile.following")}</Text>
-          </View>
-          <View className="flex-1 rounded-chef border border-chef-line bg-chef-panel p-4">
-            <ChefHat stroke={colors.saffron} size={21} />
-            <Text className="mt-3 text-chef-2xl font-extrabold text-chef-cream">{String(profile?.recipeCount ?? 0)}</Text>
-            <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">{t("profile.recipes")}</Text>
+          <View className="flex-row gap-3">
+            <View className="flex-1 rounded-chef border border-chef-line bg-chef-panel p-4">
+              <ChefHat stroke={colors.saffron} size={21} />
+              <Text className="mt-3 text-chef-2xl font-extrabold text-chef-cream">{String(Math.max(profile?.recipeCount ?? 0, recipes.length))}</Text>
+              <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">{t("profile.recipes")}</Text>
+            </View>
+            <Pressable
+              className="flex-1 rounded-chef border border-chef-line bg-chef-panel p-4 active:opacity-75"
+              onPress={() => router.push("/profile/saved-recipes")}
+            >
+              <Bookmark stroke={colors.saffron} size={21} />
+              <Text className="mt-3 text-chef-2xl font-extrabold text-chef-cream">{String(savedRecipeIds.size)}</Text>
+              <Text className="mt-1 text-chef-xs font-extrabold uppercase text-chef-muted">{t("profile.savedRecipesBtn", "Saved")}</Text>
+            </Pressable>
           </View>
         </View>
 
@@ -257,6 +307,14 @@ export default function ProfileTab() {
 
         <Button
           className="mt-4"
+          leftIcon={<UsersRound stroke={colors.saffron} size={19} style={{ marginRight: 8 }} />}
+          onPress={() => router.push("/(tabs)/community")}
+          title={t("tabs.community")}
+          variant="secondary"
+        />
+
+        <Button
+          className="mt-4"
           leftIcon={<Bookmark stroke={colors.saffron} size={19} style={{ marginRight: 8 }} />}
           onPress={() => router.push("/profile/saved-recipes")}
           title={t("profile.savedRecipesBtn")}
@@ -271,83 +329,141 @@ export default function ProfileTab() {
           variant="secondary"
         />
 
-        <View className="mt-8">
-          <View className="mb-4 flex-row items-center justify-between">
-            <View>
-              <Text className="text-chef-xs font-extrabold uppercase text-chef-saffron">{t("profile.collectionsTitle")}</Text>
-              <Text className="mt-1 text-chef-xl font-extrabold text-chef-cream">{t("profile.collectionsSubtitle")}</Text>
-            </View>
-            <Pressable className="h-11 w-11 items-center justify-center rounded-full bg-chef-saffron" onPress={openCreateCollection}>
-              <Plus stroke={colors.background} size={22} strokeWidth={2.5} />
-            </Pressable>
-          </View>
+        {/* Tab Switcher */}
+        <View className="mt-8 flex-row border-t border-b border-chef-line/30 bg-chef-black">
+          <Pressable
+            className={`flex-1 py-4 items-center justify-center border-b-2 ${
+              activeTab === "recipes" ? "border-chef-saffron" : "border-transparent"
+            }`}
+            onPress={() => setActiveTab("recipes")}
+          >
+            <Grid stroke={activeTab === "recipes" ? colors.saffron : colors.textMuted} size={22} />
+          </Pressable>
+          <Pressable
+            className={`flex-1 py-4 items-center justify-center border-b-2 ${
+              activeTab === "collections" ? "border-chef-saffron" : "border-transparent"
+            }`}
+            onPress={() => setActiveTab("collections")}
+          >
+            <Bookmark stroke={activeTab === "collections" ? colors.saffron : colors.textMuted} size={22} />
+          </Pressable>
+        </View>
 
-          {isLoadingCollections ? (
-            <View className="items-center rounded-chef border border-chef-line bg-chef-panel py-8">
+        {activeTab === "recipes" ? (
+          areRecipesLoading ? (
+            <View className="items-center py-12">
               <ActivityIndicator color={colors.saffron} />
             </View>
-          ) : collections.length === 0 ? (
-            <View className="rounded-chef border border-chef-line bg-chef-panel px-5 py-8">
+          ) : recipes.length === 0 ? (
+            <View className="rounded-chef border border-chef-line bg-chef-panel px-5 py-8 mt-4">
               <View className="mx-auto mb-4 h-14 w-14 items-center justify-center rounded-full bg-chef-saffron/15">
-                <Folder stroke={colors.saffron} size={24} />
+                <ChefHat stroke={colors.saffron} size={24} />
               </View>
-              <Text className="text-center text-chef-lg font-extrabold text-chef-cream">{t("profile.noCollections")}</Text>
-              <Text className="mt-2 text-center text-chef-sm text-chef-muted">{t("profile.noCollectionsSubtitle")}</Text>
+              <Text className="text-center text-chef-lg font-extrabold text-chef-cream">
+                {t("chefProfile.noChefRecipes", "No recipes posted yet")}
+              </Text>
+              <Text className="mt-2 text-center text-chef-sm text-chef-muted">
+                {t("chefProfile.noRecipesUploaded", "You haven't uploaded any recipes yet.")}
+              </Text>
             </View>
           ) : (
-            <View className="gap-4">
-              {collections.map((recipeCollection) => (
+            <View className="flex-row flex-wrap mt-4" style={{ gap: 2 }}>
+              {recipes.map((item) => (
                 <Pressable
-                  className="overflow-hidden rounded-chef border border-chef-line bg-chef-panel"
-                  key={recipeCollection.id}
+                  key={item.id}
+                  style={{ width: "32.6%", aspectRatio: 1 }}
+                  className="bg-chef-panel active:opacity-75 overflow-hidden rounded-md"
                   onPress={() =>
                     router.push({
-                      pathname: "/collection/[id]",
-                      params: { id: recipeCollection.id }
+                      pathname: "/recipe/[id]",
+                      params: { id: item.id }
                     })
                   }
                 >
-                  <ImageBackground
-                    className="h-32 justify-end bg-chef-saffron/10"
-                    resizeMode="cover"
-                    source={recipeCollection.coverImageUrl ? { uri: recipeCollection.coverImageUrl } : undefined}
-                  >
-                    <View className="flex-1 justify-between bg-chef-black/45 p-4">
-                      <View className="flex-row justify-end gap-2">
-                        <Pressable
-                          className="h-9 w-9 items-center justify-center rounded-full bg-chef-black/75"
-                          onPress={(event) => {
-                            event.stopPropagation();
-                            openEditCollection(recipeCollection);
-                          }}
-                        >
-                          <Pencil stroke={colors.saffron} size={16} />
-                        </Pressable>
-                        <Pressable
-                          className="h-9 w-9 items-center justify-center rounded-full bg-chef-black/75"
-                          onPress={(event) => {
-                            event.stopPropagation();
-                            confirmDeleteCollection(recipeCollection);
-                          }}
-                        >
-                          <Trash2 stroke={colors.tomato} size={16} />
-                        </Pressable>
-                      </View>
-                      <View>
-                        <Text className="text-chef-lg font-extrabold text-chef-cream" numberOfLines={1}>
-                          {recipeCollection.name}
-                        </Text>
-                        <Text className="mt-1 text-chef-sm font-bold text-chef-muted">
-                          {t("profile.recipesCount", { count: recipeCollection.recipeCount })}
-                        </Text>
-                      </View>
-                    </View>
-                  </ImageBackground>
+                  <Image className="h-full w-full" resizeMode="cover" source={{ uri: item.imageUrl }} />
                 </Pressable>
               ))}
             </View>
-          )}
-        </View>
+          )
+        ) : (
+          <View className="mt-4">
+            <View className="mb-4 flex-row items-center justify-between">
+              <View>
+                <Text className="text-chef-xs font-extrabold uppercase text-chef-saffron">{t("profile.collectionsTitle")}</Text>
+                <Text className="mt-1 text-chef-xl font-extrabold text-chef-cream">{t("profile.collectionsSubtitle")}</Text>
+              </View>
+              <Pressable className="h-11 w-11 items-center justify-center rounded-full bg-chef-saffron" onPress={openCreateCollection}>
+                <Plus stroke={colors.background} size={22} strokeWidth={2.5} />
+              </Pressable>
+            </View>
+
+            {isLoadingCollections ? (
+              <View className="items-center rounded-chef border border-chef-line bg-chef-panel py-8">
+                <ActivityIndicator color={colors.saffron} />
+              </View>
+            ) : collections.length === 0 ? (
+              <View className="rounded-chef border border-chef-line bg-chef-panel px-5 py-8">
+                <View className="mx-auto mb-4 h-14 w-14 items-center justify-center rounded-full bg-chef-saffron/15">
+                  <Folder stroke={colors.saffron} size={24} />
+                </View>
+                <Text className="text-center text-chef-lg font-extrabold text-chef-cream">{t("profile.noCollections")}</Text>
+                <Text className="mt-2 text-center text-chef-sm text-chef-muted">{t("profile.noCollectionsSubtitle")}</Text>
+              </View>
+            ) : (
+              <View className="gap-4">
+                {collections.map((recipeCollection) => (
+                  <Pressable
+                    className="overflow-hidden rounded-chef border border-chef-line bg-chef-panel"
+                    key={recipeCollection.id}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/collection/[id]",
+                        params: { id: recipeCollection.id }
+                      })
+                    }
+                  >
+                    <ImageBackground
+                      className="h-32 justify-end bg-chef-saffron/10"
+                      resizeMode="cover"
+                      source={recipeCollection.coverImageUrl ? { uri: recipeCollection.coverImageUrl } : undefined}
+                    >
+                      <View className="flex-1 justify-between bg-chef-black/45 p-4">
+                        <View className="flex-row justify-end gap-2">
+                          <Pressable
+                            className="h-9 w-9 items-center justify-center rounded-full bg-chef-black/75"
+                            onPress={(event) => {
+                              event.stopPropagation();
+                              openEditCollection(recipeCollection);
+                            }}
+                          >
+                            <Pencil stroke={colors.saffron} size={16} />
+                          </Pressable>
+                          <Pressable
+                            className="h-9 w-9 items-center justify-center rounded-full bg-chef-black/75"
+                            onPress={(event) => {
+                              event.stopPropagation();
+                              confirmDeleteCollection(recipeCollection);
+                            }}
+                          >
+                            <Trash2 stroke={colors.tomato} size={16} />
+                          </Pressable>
+                        </View>
+                        <View>
+                          <Text className="text-chef-lg font-extrabold text-chef-cream" numberOfLines={1}>
+                            {recipeCollection.name}
+                          </Text>
+                          <Text className="mt-1 text-chef-sm font-bold text-chef-muted">
+                            {t("profile.recipesCount", { count: recipeCollection.recipeCount })}
+                          </Text>
+                        </View>
+                      </View>
+                    </ImageBackground>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
 
         {error ? (
           <View className="mt-8 rounded-chef border border-chef-tomato/40 bg-chef-tomato/10 px-4 py-3">

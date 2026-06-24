@@ -1,4 +1,5 @@
-export type NotificationType = "follow" | "comment" | "like";
+export type NotificationType = "follow" | "comment" | "like" | "reply";
+
 
 export interface Notification {
   id: string;

@@ -20,7 +20,7 @@
       "loginHeaderTitle": "Inicia sesión y comienza a cocinar a través de las fronteras."
     },
     "signup": {
-      "title": "Únete a GlobalChef.",
+      "title": "Únete a HiChef.",
       "subtitle": "Tu cuenta impulsará las cargas de recetas, los descubrimientos guardados y las funciones comunitarias a medida que lleguen.",
       "nameLabel": "Nombre para mostrar",
       "signupBtn": "Crear cuenta",
@@ -37,7 +37,7 @@
       "successAlert": "Revisa tu correo electrónico para obtener instrucciones para restablecer tu contraseña.",
       "recoveryEyebrow": "Recuperación de cuenta",
       "recoveryTitle": "Restablecer tu contraseña.",
-      "recoverySubtitle": "Ingresa el correo electrónico conectado a tu cuenta de GlobalChef y Firebase enviará un enlace de restablecimiento.",
+      "recoverySubtitle": "Ingresa el correo electrónico conectado a tu cuenta de HiChef y Firebase enviará un enlace de restablecimiento.",
       "rememberText": "¿Lo recordaste? ",
       "successAlertSent": "Se envió el correo electrónico de restablecimiento de contraseña. Revisa tu bandeja de entrada para el siguiente paso."
     },
@@ -62,18 +62,18 @@
     "welcomeDefault": "¿Qué vamos a cocinar, Chef?",
     "searchPlaceholder": "Buscar recetas, cocinas o países",
     "trendingTitle": "Recetas en tendencia",
-    "trendingSubtitle": "Frescas de los cocineros de GlobalChef",
+    "trendingSubtitle": "Frescas de los cocineros de HiChef",
     "feedTitle": "Feed de recetas",
     "dishesFound": "{{count}} platos encontrados",
     "dishesFound_one": "1 plato encontrado",
     "couldNotLoad": "No se pudieron cargar las recetas",
     "noRecipes": "No hay recetas aún",
-    "noRecipesSubtitle": "Sube la primera receta de GlobalChef, o desliza para actualizar después de que se creen los datos semilla."
+    "noRecipesSubtitle": "Sube la primera receta de HiChef, o desliza para actualizar después de que se creen los datos semilla."
   },
   "upload": {
     "title": "Subir receta",
     "headerTitle": "Comparte un plato con el mundo.",
-    "subtitle": "Agrega los detalles principales de la receta, sube una buena imagen y publícala en el feed de GlobalChef.",
+    "subtitle": "Agrega los detalles principales de la receta, sube una buena imagen y publícala en el feed de HiChef.",
     "changeImage": "Cambiar imagen",
     "tapChoosePhoto": "Toca para elegir otra foto",
     "pickImage": "Elegir una imagen de la receta",
@@ -112,7 +112,7 @@
       "notSignedIn": "Debes iniciar sesión para subir una receta.",
       "signInBefore": "Inicia sesión antes de subir una receta."
     },
-    "success": "Receta subida al feed de GlobalChef."
+    "success": "Receta subida al feed de HiChef."
   },
   "search": {
     "headerTitle": "Búsqueda y descubrimiento",
@@ -145,12 +145,12 @@
   },
   "community": {
     "headerTitle": "Comunidad",
-    "headerSubtitle": "Cocina con la mesa de GlobalChef.",
+    "headerSubtitle": "Cocina con la mesa de HiChef.",
     "subtitle": "Sigue a los chefs, realiza un seguimiento de los platos frescos y atrapa las recetas alrededor de las cuales se reúne la gente.",
     "suggestedChefs": "Chefs sugeridos",
     "trendingChefs": "Chefs en tendencia",
     "noChefsTitle": "No hay chefs nuevos todavía",
-    "noChefsSubtitle": "A medida que más cocineros se unan a GlobalChef, aparecerán nuevas sugerencias aquí.",
+    "noChefsSubtitle": "A medida que más cocineros se unan a HiChef, aparecerán nuevas sugerencias aquí.",
     "trendingWarming": "Los chefs en tendencia se están preparando",
     "trendingFollowerCounts": "Los recuentos de seguidores darán forma a esta sección a medida que crezca la comunidad.",
     "networkTitle": "Recetas de chefs seguidos",
@@ -190,12 +190,13 @@
     "alertLikeBodyDefault": "A uno de tus platos le ha gustado a alguien.",
     "alertComment": "{{name}} comentó en tu receta.",
     "alertCommentBody": "\"{{text}}\"",
+    "alertReply": "{{name}} respondió a tu comentario.",
     "alertCommentBodyDefault": "Alguien dejó una nota en tu receta.",
     "unread": "Sin leer",
     "markAllRead": "Marcar todo como leído",
     "read": "Leído",
-    "activityDefault": "Nueva actividad de GlobalChef",
-    "activityBodyDefault": "Abre GlobalChef para ver qué cambió.",
+    "activityDefault": "Nueva actividad de HiChef",
+    "activityBodyDefault": "Abre HiChef para ver qué cambió.",
     "justNow": "Ahora mismo",
     "minAgo": "hace {{count}}m",
     "hoursAgo": "hace {{count}}h",
@@ -289,8 +290,8 @@
     "byChef": "Por {{name}}",
     "alreadyLikedComment": "Ya te gusta este comentario",
     "shareError": "No se pudo abrir el uso compartido en este momento.",
-    "shareMessage": "Prueba \"{{title}}\" en GlobalChef. {{cuisine}} de {{country}}.",
-    "shareTitle": "Receta de GlobalChef",
+    "shareMessage": "Prueba \"{{title}}\" en HiChef. {{cuisine}} de {{country}}.",
+    "shareTitle": "Receta de HiChef",
     "global": "Mundial",
     "chefsChoice": "Elección del chef"
   },
@@ -312,9 +313,9 @@
     "publicChefProfile": "Perfil público del chef",
     "recipeGrid": "Cuadrícula de recetas",
     "dishesByChef": "{{count}} platos de {{name}}",
-    "shareChefTitle": "{{name}} en GlobalChef",
-    "shareChefMessage": "Conoce a {{name}} en GlobalChef. globalchef://chef/{{id}}",
-    "shareChefMessageWithCountry": "Conoce a {{name}} en GlobalChef de {{country}}. globalchef://chef/{{id}}"
+    "shareChefTitle": "{{name}} en HiChef",
+    "shareChefMessage": "Conoce a {{name}} en HiChef. globalchef://chef/{{id}}",
+    "shareChefMessageWithCountry": "Conoce a {{name}} en HiChef de {{country}}. globalchef://chef/{{id}}"
   },
   "savedRecipes": {
     "title": "Recetas Guardadas",
@@ -356,5 +357,18 @@
     "countryTooLong": "El país debe tener 56 caracteres o menos.",
     "checkFields": "Verifica los campos del perfil resaltados.",
     "success": "Perfil actualizado"
+  },
+  "tarzan": {
+    "title": "Tarzan",
+    "welcome": "¡Hola! Soy Tarzan, tu compañero de cocina. Pregúntame lo que quieras sobre recetas, ingredientes, técnicas de cocina, sustituciones, planificación de comidas o nutrición.",
+    "greeting": "Hola Chef, ¿qué vamos a cocinar hoy?",
+    "inputPlaceholder": "Pregunta sobre recetas, sustituciones...",
+    "tapToSpeak": "Presiona el micrófono o selecciona una sugerencia arriba",
+    "listening": "Escuchando...",
+    "voiceMode": "Modo de voz",
+    "textMode": "Modo de texto",
+    "cancel": "Cancelar",
+    "micPermissionTitle": "Permiso requerido",
+    "micPermissionMessage": "Se requieren permisos de micrófono y reconocimiento de voz para utilizar la entrada de voz. Habilítelos en la configuración de su dispositivo."
   }
 }

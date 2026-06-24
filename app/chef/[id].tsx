@@ -274,17 +274,17 @@ export default function ChefProfileScreen() {
 
   const isOwnProfile = user.id === chefId;
   const displayRecipeCount = Math.max(profile.recipeCount, recipes.length);
-  const initials = getInitials(profile.displayName || "GlobalChef cook") || "GC";
+  const initials = getInitials(profile.displayName || "HiChef cook") || "HC";
 
   return (
     <View className="flex-1 bg-chef-black">
       <SafeAreaView className="flex-1" edges={["top"]}>
         <FlatList
-          columnWrapperStyle={recipes.length > 0 ? { gap: 16, paddingHorizontal: 24 } : undefined}
-          contentContainerStyle={{ paddingBottom: 44 }}
+          columnWrapperStyle={recipes.length > 0 ? { gap: 2, paddingHorizontal: 2 } : undefined}
+          contentContainerStyle={{ gap: 2, paddingBottom: 44 }}
           data={recipes}
           keyExtractor={(item) => item.id}
-          numColumns={2}
+          numColumns={3}
           ListEmptyComponent={
             areRecipesLoading ? (
               <RecipeSkeletonList />
@@ -328,6 +328,9 @@ export default function ChefProfileScreen() {
                 </View>
                 <Text className="mt-5 text-chef-xs font-bold uppercase text-chef-saffron">{t("chefProfile.publicChefProfile")}</Text>
                 <Text className="mt-3 text-center text-[32px] font-extrabold leading-10 text-chef-cream">{profile.displayName}</Text>
+                {profile.username ? (
+                  <Text className="mt-1.5 text-center text-chef-base font-extrabold text-chef-saffron">@{profile.username}</Text>
+                ) : null}
                 {profile.country ? (
                   <View className="mt-3 flex-row items-center rounded-full bg-chef-panel px-4 py-2">
                     <Globe2 stroke={colors.saffron} size={16} />
@@ -362,16 +365,13 @@ export default function ChefProfileScreen() {
             </View>
           }
           renderItem={({ item }) => (
-            <RecipeGridTile
-              isLiked={likedRecipeIds.has(item.id)}
-              isLikeLoading={pendingLikeIds.has(item.id)}
-              isSaved={savedRecipeIds.has(item.id)}
-              isSaveLoading={pendingSaveIds.has(item.id)}
-              onLike={handleLike}
-              onOpen={openRecipe}
-              onSave={handleSave}
-              recipe={item}
-            />
+            <Pressable
+              style={{ flex: 1 / 3, aspectRatio: 1 }}
+              className="bg-chef-panel active:opacity-75 overflow-hidden rounded-md"
+              onPress={() => openRecipe(item.id)}
+            >
+              <Image className="h-full w-full" resizeMode="cover" source={{ uri: item.imageUrl }} />
+            </Pressable>
           )}
           showsVerticalScrollIndicator={false}
         />

@@ -20,7 +20,7 @@
       "loginHeaderTitle": "Connectez-vous et commencez à cuisiner au-delà des frontières."
     },
     "signup": {
-      "title": "Rejoignez GlobalChef.",
+      "title": "Rejoignez HiChef.",
       "subtitle": "Votre compte alimentera les publications de recettes, les découvertes sauvegardées et les fonctionnalités de la communauté à mesure qu'elles arriveront.",
       "nameLabel": "Nom d'affichage",
       "signupBtn": "Créer un compte",
@@ -37,7 +37,7 @@
       "successAlert": "Consultez vos e-mails pour obtenir les instructions de réinitialisation du mot de passe.",
       "recoveryEyebrow": "Récupération de compte",
       "recoveryTitle": "Réinitialiser votre mot de passe.",
-      "recoverySubtitle": "Saisissez l'adresse e-mail associée à votre compte GlobalChef et Firebase enverra un lien de réinitialisation.",
+      "recoverySubtitle": "Saisissez l'adresse e-mail associée à votre compte HiChef et Firebase enverra un lien de réinitialisation.",
       "rememberText": "Vous vous en souvenez ? ",
       "successAlertSent": "E-mail de réinitialisation envoyé. Consultez votre boîte de réception pour l'étape suivante."
     },
@@ -62,18 +62,18 @@
     "welcomeDefault": "Qu'est-ce qu'on cuisine, Chef ?",
     "searchPlaceholder": "Rechercher des recettes, cuisines ou pays",
     "trendingTitle": "Recettes du moment",
-    "trendingSubtitle": "Fraîchement préparées par les chefs GlobalChef",
+    "trendingSubtitle": "Fraîchement préparées par les chefs HiChef",
     "feedTitle": "Flux de recettes",
     "dishesFound": "{{count}} plats trouvés",
     "dishesFound_one": "1 plat trouvé",
     "couldNotLoad": "Impossible de charger les recettes",
     "noRecipes": "Aucune recette pour le moment",
-    "noRecipesSubtitle": "Publiez la première recette GlobalChef, ou tirez pour rafraîchir une fois les données de démonstration créées."
+    "noRecipesSubtitle": "Publiez la première recette HiChef, ou tirez pour rafraîchir une fois les données de démonstration créées."
   },
   "upload": {
     "title": "Publier",
     "headerTitle": "Partagez un plat avec le monde.",
-    "subtitle": "Ajoutez les détails de la recette, chargez une belle image et publiez-la sur le flux GlobalChef.",
+    "subtitle": "Ajoutez les détails de la recette, chargez une belle image et publiez-la sur le flux HiChef.",
     "changeImage": "Modifier l'image",
     "tapChoosePhoto": "Appuyez pour choisir une autre photo",
     "pickImage": "Choisir une image de recette",
@@ -112,7 +112,7 @@
       "notSignedIn": "Vous devez être connecté pour publier une recette.",
       "signInBefore": "Connectez-vous avant de publier une recette."
     },
-    "success": "Recette publiée sur le flux GlobalChef."
+    "success": "Recette publiée sur le flux HiChef."
   },
   "search": {
     "headerTitle": "Recherche et découverte",
@@ -145,12 +145,12 @@
   },
   "community": {
     "headerTitle": "Communauté",
-    "headerSubtitle": "Cuisinez avec la table GlobalChef.",
+    "headerSubtitle": "Cuisinez avec la table HiChef.",
     "subtitle": "Suivez les chefs, découvrez les nouveautés culinaires et rejoignez les conversations autour des recettes appréciées.",
     "suggestedChefs": "Chefs suggérés",
     "trendingChefs": "Chefs populaires",
     "noChefsTitle": "Aucun nouveau chef pour le moment",
-    "noChefsSubtitle": "À mesure que de nouveaux cuisiniers rejoindront GlobalChef, des suggestions apparaîtront ici.",
+    "noChefsSubtitle": "À mesure que de nouveaux cuisiniers rejoindront HiChef, des suggestions apparaîtront ici.",
     "trendingWarming": "Les chefs populaires se préparent",
     "trendingFollowerCounts": "Le nombre d'abonnés façonnera cette section à mesure que la communauté grandira.",
     "networkTitle": "Recettes des chefs suivis",
@@ -179,12 +179,13 @@
     "alertLikeBodyDefault": "L'une de vos recettes a reçu un nouveau j'aime.",
     "alertComment": "{{name}} a commenté votre recette.",
     "alertCommentBody": "\"{{text}}\"",
+    "alertReply": "{{name}} a répondu à votre commentaire.",
     "alertCommentBodyDefault": "Quelqu'un a laissé une note sur votre recette.",
     "unread": "Non lu",
     "markAllRead": "Tout marquer comme lu",
     "read": "Lu",
-    "activityDefault": "Nouvelle activité GlobalChef",
-    "activityBodyDefault": "Ouvrez GlobalChef pour voir les nouveautés.",
+    "activityDefault": "Nouvelle activité HiChef",
+    "activityBodyDefault": "Ouvrez HiChef pour voir les nouveautés.",
     "justNow": "À l'instant",
     "minAgo": "il y a {{count}} min",
     "hoursAgo": "il y a {{count}} h",
@@ -278,8 +279,8 @@
     "byChef": "Par {{name}}",
     "alreadyLikedComment": "Vous aimez déjà ce commentaire",
     "shareError": "Impossible de partager pour le moment.",
-    "shareMessage": "Essayez \"{{title}}\" sur GlobalChef. {{cuisine}} de {{country}}.",
-    "shareTitle": "Recette GlobalChef",
+    "shareMessage": "Essayez \"{{title}}\" sur HiChef. {{cuisine}} de {{country}}.",
+    "shareTitle": "Recette HiChef",
     "global": "Mondial",
     "chefsChoice": "Choix du chef"
   },
@@ -301,9 +302,9 @@
     "publicChefProfile": "Profil public du chef",
     "recipeGrid": "Grille de recettes",
     "dishesByChef": "{{count}} plats par {{name}}",
-    "shareChefTitle": "{{name}} sur GlobalChef",
-    "shareChefMessage": "Découvrez {{name}} sur GlobalChef. globalchef://chef/{{id}}",
-    "shareChefMessageWithCountry": "Découvrez {{name}} sur GlobalChef de {{country}}. globalchef://chef/{{id}}"
+    "shareChefTitle": "{{name}} sur HiChef",
+    "shareChefMessage": "Découvrez {{name}} sur HiChef. globalchef://chef/{{id}}",
+    "shareChefMessageWithCountry": "Découvrez {{name}} sur HiChef de {{country}}. globalchef://chef/{{id}}"
   },
   "savedRecipes": {
     "title": "Recettes Enregistrées",
@@ -345,5 +346,18 @@
     "countryTooLong": "Le pays doit comporter 56 caractères ou moins.",
     "checkFields": "Veuillez vérifier les champs de profil mis en évidence.",
     "success": "Profil mis à jour"
+  },
+  "tarzan": {
+    "title": "Tarzan",
+    "welcome": "Salut ! Je suis Tarzan, ton compagnon de cuisine. Posez-moi des questions sur les recettes, les ingrédients, les techniques de cuisson, les substitutions, la planification des repas ou la nutrition.",
+    "greeting": "Bonjour Chef, qu'est-ce qu'on cuisine aujourd'hui ?",
+    "inputPlaceholder": "Posez des questions sur les recettes, substitutions...",
+    "tapToSpeak": "Appuyez sur le micro ou sélectionnez une suggestion ci-dessus",
+    "listening": "Écoute...",
+    "voiceMode": "Mode voix",
+    "textMode": "Mode texte",
+    "cancel": "Annuler",
+    "micPermissionTitle": "Autorisation requise",
+    "micPermissionMessage": "Les autorisations de microphone et de reconnaissance vocale sont requises pour utiliser la saisie vocale. Veuillez les activer dans les paramètres de votre appareil."
   }
 }

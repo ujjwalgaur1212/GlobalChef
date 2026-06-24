@@ -83,7 +83,7 @@ export const LikeService = {
       if (recipientId && recipientId !== userId) {
         createLikeNotification(
           userId,
-          auth?.currentUser?.displayName || "GlobalChef cook",
+          auth?.currentUser?.displayName || "HiChef cook",
           auth?.currentUser?.photoURL ?? null,
           recipientId,
           recipeId,

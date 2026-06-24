@@ -29,7 +29,7 @@ export function AuthScreenShell({ eyebrow, title, subtitle, children, footer }: 
                 <View className="mb-10 flex-row items-center justify-between">
                   <View>
                     <Text className="text-chef-xs font-bold uppercase text-chef-saffron">{eyebrow}</Text>
-                    <Text className="mt-1 text-chef-2xl font-extrabold text-chef-cream">GlobalChef</Text>
+                    <Text className="mt-1 text-chef-2xl font-extrabold text-chef-cream">HiChef</Text>
                   </View>
                   <View className="h-14 w-14 items-center justify-center rounded-chef bg-chef-panel">
                     <ChefHat stroke={colors.saffron} size={27} strokeWidth={2.4} />

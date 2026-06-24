@@ -123,7 +123,7 @@ export async function likeRecipeOnce(recipeId: string, userId: string) {
     });
     createLikeNotification(
       userId,
-      auth?.currentUser?.displayName || "GlobalChef cook",
+      auth?.currentUser?.displayName || "HiChef cook",
       auth?.currentUser?.photoURL ?? null,
       recipeData.authorId || recipeData.createdBy,
       recipeId,

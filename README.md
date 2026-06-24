@@ -1,6 +1,6 @@
-# GlobalChef
+# HiChef
 
-GlobalChef is an Expo + React Native social cooking app foundation. This milestone sets up the production-ready shell, authentication flow, Firebase integration, NativeWind styling, and protected bottom-tab navigation.
+HiChef is an Expo + React Native social cooking app foundation. This milestone sets up the production-ready shell, authentication flow, Firebase integration, NativeWind styling, and protected bottom-tab navigation.
 
 Recipe discovery, upload, and community screens are intentionally placeholders for the next milestone.
 

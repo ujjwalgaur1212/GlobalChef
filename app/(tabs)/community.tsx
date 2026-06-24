@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Activity, ChefHat, Clock3, Heart, MessageCircle, Sparkles, UserPlus, UsersRound } from "lucide-react-native";
+import { Activity, ArrowLeft, ChefHat, Clock3, Heart, MessageCircle, Sparkles, UserPlus, UsersRound } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, Animated, Image, Pressable, ScrollView, Text, View } from "react-native";
@@ -61,7 +61,7 @@ function ChefCard({ chef, currentUserId, onOpenChef }: ChefCardProps) {
   const { showToast } = useToast();
   const { isFollowing, isLoading, toggleFollow } = useFollow(currentUserId, chef.id);
   const scale = useRef(new Animated.Value(1)).current;
-  const initials = getInitials(chef.displayName || "GlobalChef cook") || "GC";
+  const initials = getInitials(chef.displayName || "HiChef cook") || "HC";
   const isOwnProfile = chef.id === currentUserId;
 
   function animate(toValue: number) {
@@ -106,10 +106,10 @@ function ChefCard({ chef, currentUserId, onOpenChef }: ChefCardProps) {
           </View>
 
           <Text className="mt-5 text-chef-lg font-extrabold text-chef-cream" numberOfLines={1}>
-            {chef.displayName || "GlobalChef cook"}
+            {chef.displayName || "HiChef cook"}
           </Text>
           <Text className="mt-1 text-chef-sm font-semibold text-chef-muted" numberOfLines={1}>
-            {chef.country || chef.email || "GlobalChef member"}
+            {chef.country || chef.email || "HiChef member"}
           </Text>
           {chef.bio ? (
             <Text className="mt-3 min-h-10 text-chef-sm leading-5 text-chef-muted" numberOfLines={2}>
@@ -372,6 +372,17 @@ export default function CommunityTab() {
       <SafeAreaView className="flex-1" edges={["top"]}>
         <ScrollView contentContainerStyle={{ paddingBottom: 116 }} showsVerticalScrollIndicator={false}>
           <View className="px-6 pb-5 pt-3">
+            <View className="flex-row items-center justify-between mb-4">
+              <Pressable
+                className="h-11 w-11 items-center justify-center rounded-full bg-chef-panel"
+                onPress={() => router.back()}
+              >
+                <ArrowLeft stroke={colors.cream} size={22} strokeWidth={2.4} />
+              </Pressable>
+              <View className="h-12 w-12 items-center justify-center rounded-chef border border-chef-line bg-chef-panel">
+                <UsersRound stroke={colors.saffron} size={22} strokeWidth={2.4} />
+              </View>
+            </View>
             <View className="flex-row items-start justify-between">
               <View className="flex-1 pr-4">
                 <Text className="text-chef-sm font-bold uppercase text-chef-saffron">{t("community.headerTitle")}</Text>
@@ -379,9 +390,6 @@ export default function CommunityTab() {
                 <Text className="mt-3 text-chef-base leading-7 text-chef-muted">
                   {t("community.subtitle")}
                 </Text>
-              </View>
-              <View className="h-12 w-12 items-center justify-center rounded-chef border border-chef-line bg-chef-panel">
-                <UsersRound stroke={colors.saffron} size={22} strokeWidth={2.4} />
               </View>
             </View>
           </View>
@@ -433,12 +441,28 @@ export default function CommunityTab() {
                     key={recipe.id}
                     onPress={() => openRecipe(recipe.id)}
                   >
-                    <View className="mr-3 h-11 w-11 items-center justify-center rounded-full bg-chef-saffron/15">
-                      <Activity stroke={colors.saffron} size={19} />
-                    </View>
+                    <Pressable
+                      className="mr-3 h-11 w-11 items-center justify-center rounded-full bg-chef-saffron/10 border border-chef-saffron/30 active:opacity-75"
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        if (recipe.authorId) {
+                          openChef(recipe.authorId);
+                        }
+                      }}
+                    >
+                      <Text className="text-chef-xs font-extrabold text-chef-saffron">
+                        {(recipe.authorName || "HiChef cook")
+                          .split(" ")
+                          .map((part) => part.trim().slice(0, 1))
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()}
+                      </Text>
+                    </Pressable>
                     <View className="flex-1">
                       <Text className="text-chef-sm font-extrabold text-chef-cream" numberOfLines={1}>
-                        {t("community.sharedRecipe", { chef: recipe.authorName || "GlobalChef cook", title: recipe.title })}
+                        {t("community.sharedRecipe", { chef: recipe.authorName || "HiChef cook", title: recipe.title })}
                       </Text>
                       <View className="mt-2 flex-row flex-wrap items-center">
                         <Clock3 stroke={colors.textMuted} size={14} />

@@ -158,15 +158,57 @@ export async function deleteCollection(collectionId: string, ownerId: string) {
     batch.delete(recipeDocument.ref);
   });
   batch.delete(collectionRef);
+  await batch.commit();
+}
+
+async function seedDefaultCollections(ownerId: string): Promise<RecipeCollection[]> {
+  assertCurrentUser(ownerId);
+  
+  const defaultCollections = [
+    { name: "Favorites", description: "My all-time favorite recipes" },
+    { name: "Quick Meals", description: "Fast and easy recipes for busy days" },
+    { name: "Healthy", description: "Nutritious and wholesome dishes" },
+    { name: "Desserts", description: "Sweet treats and baking favorites" }
+  ];
+
+  const dbInstance = requireDb();
+  const batch = writeBatch(dbInstance);
+  const seeded: RecipeCollection[] = [];
+
+  for (const item of defaultCollections) {
+    const docRef = doc(collection(dbInstance, "collections"));
+    const newCol = {
+      id: docRef.id,
+      ownerId,
+      name: item.name,
+      description: item.description,
+      recipeCount: 0
+    };
+    
+    batch.set(docRef, {
+      ...newCol,
+      createdAt: serverTimestamp()
+    });
+
+    seeded.push({
+      ...newCol,
+      createdAt: new Date()
+    });
+  }
 
   await batch.commit();
+  return seeded;
 }
 
 export async function getUserCollections(ownerId: string) {
   const snapshot = await getDocs(query(collectionsCollection(), where("ownerId", "==", ownerId)));
-  const userCollections = snapshot.docs
+  let userCollections = snapshot.docs
     .map(mapCollectionDocument)
     .sort((left, right) => (right.createdAt?.getTime() ?? 0) - (left.createdAt?.getTime() ?? 0));
+
+  if (userCollections.length === 0) {
+    userCollections = await seedDefaultCollections(ownerId);
+  }
 
   return withCoverImages(userCollections);
 }

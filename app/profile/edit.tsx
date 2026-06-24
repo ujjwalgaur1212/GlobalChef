@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/useToast";
 import { subscribeToUserProfile, updateChefProfile } from "@/services/userService";
 import type { UserProfile } from "@/types/user";
 
-type ProfileErrors = Partial<Record<"displayName" | "bio" | "country" | "photo", string>>;
+type ProfileErrors = Partial<Record<"displayName" | "bio" | "country" | "photo" | "username", string>>;
 
 function getInitials(name: string) {
   return name
@@ -34,6 +34,7 @@ export default function EditProfileScreen() {
   const { showToast } = useToast();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
   const [country, setCountry] = useState("");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -52,6 +53,7 @@ export default function EditProfileScreen() {
       (nextProfile) => {
         setProfile(nextProfile);
         setDisplayName((current) => current || nextProfile?.displayName || user.displayName || "");
+        setUsername((current) => current || nextProfile?.username || "");
         setBio((current) => current || nextProfile?.bio || "");
         setCountry((current) => current || nextProfile?.country || "");
       },
@@ -135,6 +137,12 @@ export default function EditProfileScreen() {
       nextErrors.displayName = t("editProfile.displayNameTooLong");
     }
 
+    if (!username.trim()) {
+      nextErrors.username = t("editProfile.usernameRequired", "Username is required.");
+    } else if (!/^[a-zA-Z0-9_]{3,30}$/.test(username.trim())) {
+      nextErrors.username = t("editProfile.usernameInvalid", "Username must be 3-30 characters (alphanumeric and underscores).");
+    }
+
     if (bio.trim().length > 220) {
       nextErrors.bio = t("editProfile.bioTooLong");
     }
@@ -164,6 +172,7 @@ export default function EditProfileScreen() {
       await updateChefProfile({
         userId: user.id,
         displayName,
+        username: username.trim().toLowerCase(),
         bio,
         country,
         photoUri
@@ -193,7 +202,7 @@ export default function EditProfileScreen() {
   }
 
   const previewUri = photoUri || profile?.photoURL || user.photoURL || null;
-  const initials = getInitials(displayName || user.displayName || "GlobalChef cook") || "GC";
+  const initials = getInitials(displayName || user.displayName || "HiChef cook") || "HC";
 
   return (
     <View className="flex-1 bg-chef-black">
@@ -247,6 +256,14 @@ export default function EditProfileScreen() {
                 onChangeText={setDisplayName}
                 placeholder={t("editProfile.displayNamePlaceholder")}
                 value={displayName}
+              />
+              <FormInput
+                error={errors.username}
+                label={t("editProfile.usernameLabel", "Username")}
+                leftIcon={<UserRound stroke={colors.textMuted} size={20} />}
+                onChangeText={(text) => setUsername(text.trim().toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                placeholder={t("editProfile.usernamePlaceholder", "username")}
+                value={username}
               />
               <FormInput
                 error={errors.country}

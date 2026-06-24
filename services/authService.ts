@@ -19,7 +19,7 @@ function mapFirebaseUser(user: User): AuthUser {
   return {
     id: toSafeString(user.uid),
     email: toSafeString(user.email),
-    displayName: toSafeString(user.displayName, "GlobalChef cook"),
+    displayName: toSafeString(user.displayName, "HiChef cook"),
     photoURL: typeof user.photoURL === "string" ? user.photoURL : null
   };
 }
